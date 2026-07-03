@@ -1,0 +1,6 @@
+{
+  "firestore": {
+    "database": "ai-studio-procureflowai-c8d8afc6-0d2a-4bf4-8b17-8a4dd8a3cad9",
+    "rules": "firestore.rules"
+  }
+}

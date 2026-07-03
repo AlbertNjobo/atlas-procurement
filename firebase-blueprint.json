@@ -1,0 +1,211 @@
+{
+  "entities": {
+    "IntakeRequest": {
+      "title": "IntakeRequest",
+      "description": "A procurement intake request.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "department": { "type": "string" },
+        "status": { "type": "string" },
+        "amount": { "type": "string" },
+        "date": { "type": "string" },
+        "supplier": { "type": "string" },
+        "description": { "type": "string" },
+        "userId": { "type": "string", "description": "The user who owns the intake request." }
+      },
+      "required": ["title", "department", "status", "amount", "date", "description", "userId"]
+    },
+    "Supplier": {
+      "title": "Supplier",
+      "description": "A supplier entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "risk": { "type": "string" },
+        "status": { "type": "string" },
+        "compliance": { "type": "boolean" },
+        "userId": { "type": "string", "description": "The user who added the supplier." }
+      },
+      "required": ["name", "category", "risk", "status", "compliance", "userId"]
+    },
+    "SpendMetric": {
+      "title": "SpendMetric",
+      "description": "Monthly spend metric.",
+      "type": "object",
+      "properties": {
+        "month": { "type": "string" },
+        "spend": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["month", "spend", "userId"]
+    },
+    "DepartmentSpendMetric": {
+      "title": "DepartmentSpendMetric",
+      "description": "Quarterly department spend metric.",
+      "type": "object",
+      "properties": {
+        "department": { "type": "string" },
+        "q1": { "type": "number" },
+        "q2": { "type": "number" },
+        "q3": { "type": "number" },
+        "q4": { "type": "number" },
+        "userId": { "type": "string" }
+      },
+      "required": ["department", "q1", "q2", "q3", "q4", "userId"]
+    },
+    "VendorOnboarding": {
+      "title": "VendorOnboarding",
+      "description": "Vendor onboarding submission.",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "taxId": { "type": "string" },
+        "certifications": { "type": "string" },
+        "status": { "type": "string" },
+        "userId": { "type": "string", "description": "The user who owns the onboarding form." }
+      },
+      "required": ["companyName", "taxId", "certifications", "status", "userId"]
+    },
+    "ProcurementCatalog": {
+      "title": "ProcurementCatalog",
+      "description": "Items available in the catalog.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "category": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "vendorName": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["name", "description", "price", "category", "vendorId", "vendorName", "createdAt"]
+    },
+    "PurchaseRequisition": {
+      "title": "PurchaseRequisition",
+      "description": "Purchase requisitions.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "purpose": { "type": "string" },
+        "reason": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "category": { "type": "string" },
+        "items": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "auditTrail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "action": { "type": "string" },
+              "actorId": { "type": "string" },
+              "timestamp": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["title", "status", "purpose", "reason", "totalAmount", "createdAt", "createdBy"]
+    },
+    "RFQ": {
+      "title": "RFQ",
+      "description": "Request for Quotation.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "dueDate": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "auditTrail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "action": { "type": "string" },
+              "actorId": { "type": "string" },
+              "timestamp": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["title", "description", "dueDate", "status", "createdBy", "createdAt"]
+    },
+    "Bid": {
+      "title": "Bid",
+      "description": "Vendor bid for an RFQ.",
+      "type": "object",
+      "properties": {
+        "rfqId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "vendorName": { "type": "string" },
+        "amount": { "type": "number" },
+        "proposal": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["rfqId", "vendorId", "vendorName", "amount", "proposal", "status", "createdAt"]
+    },
+    "RFQQuestion": {
+      "title": "RFQQuestion",
+      "description": "Question asked by a vendor regarding an RFQ.",
+      "type": "object",
+      "properties": {
+        "rfqId": { "type": "string" },
+        "vendorId": { "type": "string" },
+        "vendorName": { "type": "string" },
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["rfqId", "vendorId", "vendorName", "question", "createdAt"]
+    }
+  },
+  "firestore": {
+    "intakes/{intakeId}": {
+      "schema": { "$ref": "#/entities/IntakeRequest" },
+      "description": "Global intake requests"
+    },
+    "suppliers/{supplierId}": {
+      "schema": { "$ref": "#/entities/Supplier" },
+      "description": "Global suppliers"
+    },
+    "spendMetrics/{metricId}": {
+      "schema": { "$ref": "#/entities/SpendMetric" },
+      "description": "Global spend metrics"
+    },
+    "departmentSpendMetrics/{metricId}": {
+      "schema": { "$ref": "#/entities/DepartmentSpendMetric" },
+      "description": "Global department spend metrics"
+    },
+    "vendorOnboarding/{onboardingId}": {
+      "schema": { "$ref": "#/entities/VendorOnboarding" },
+      "description": "Vendor onboarding submissions"
+    },
+    "procurementCatalog/{itemId}": {
+      "schema": { "$ref": "#/entities/ProcurementCatalog" },
+      "description": "Procurement catalog items"
+    },
+    "purchaseRequisitions/{reqId}": {
+      "schema": { "$ref": "#/entities/PurchaseRequisition" },
+      "description": "Purchase requisitions"
+    },
+    "rfqs/{rfqId}": {
+      "schema": { "$ref": "#/entities/RFQ" },
+      "description": "Requests for Quotation"
+    },
+    "bids/{bidId}": {
+      "schema": { "$ref": "#/entities/Bid" },
+      "description": "Bids for RFQs"
+    }
+  }
+}

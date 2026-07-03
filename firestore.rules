@@ -1,0 +1,84 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Primitive Definition
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    function getUserRole() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+    
+    function isRole(role) {
+      return getUserRole() == role;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+    
+    match /audit_events/{eventId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+    
+    match /goodsReceipts/{receiptId} {
+      allow read, create, update: if isSignedIn();
+    }
+    
+    match /invoices/{invoiceId} {
+      allow read, create, update: if isSignedIn();
+    }
+
+    match /purchaseRequisitions/{reqId} {
+      // Requestors view own; Buyers, Finance, Admin view all
+      allow read: if isSignedIn() && (isRole('Buyer') || isRole('Finance') || isRole('Admin') || resource.data.createdBy == request.auth.uid);
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (isRole('Buyer') || isRole('Finance') || isRole('Admin') || resource.data.createdBy == request.auth.uid);
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /rfqs/{rfqId} {
+      allow read: if isSignedIn();
+      // Only Buyers/Admins can create/update RFQs
+      allow create, update: if isSignedIn() && (isRole('Buyer') || isRole('Admin'));
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+    }
+
+    match /purchaseOrders/{orderId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn() && (isRole('Finance') || isRole('Buyer') || isRole('Admin'));
+      allow delete: if false;
+    }
+    
+    // Other collections (simplified)
+    match /intakes/{id} { allow read, write: if isSignedIn(); }
+    match /suppliers/{id} { allow read, write: if isSignedIn(); }
+    match /spendMetrics/{id} { allow read, write: if isSignedIn(); }
+    match /departmentSpendMetrics/{id} { allow read, write: if isSignedIn(); }
+    match /vendorOnboarding/{id} { allow read, write: if isSignedIn(); }
+    match /procurementCatalog/{id} { allow read, write: if isSignedIn(); }
+    match /bids/{id} { allow read, write: if isSignedIn(); }
+    match /rfqQuestions/{id} { allow read, write: if isSignedIn(); }
+    match /knowledgeBase/{id} {
+      allow read, update, delete: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+    }
+  }
+}
