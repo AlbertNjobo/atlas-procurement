@@ -16,13 +16,13 @@ export function useKeyboardShortcuts() {
         case 'k':
           // Ctrl+K -> Open AgentChat
           event.preventDefault();
-          navigate('/agent');
+          navigate('/app/agent');
           toast.info('Opened AI Agent via shortcut');
           break;
         case 'n':
           // Ctrl+N -> New Requisition
           event.preventDefault();
-          navigate('/requisitions?new=true');
+          navigate('/app/requisitions?new=true');
           toast.info('Opened New Requisition via shortcut');
           break;
         default:

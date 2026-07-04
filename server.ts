@@ -4,7 +4,7 @@ import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import "dotenv/config";
 import { agentTools } from "./src/lib/agent-tools";
-import { chunkText, generateEmbeddings, generateQueryEmbedding, searchChunks, rerankResults } from "./src/lib/rag";
+import { chunkText, chunkTextSmart, generateEmbeddings, generateQueryEmbedding, searchChunks, rerankResults } from "./src/lib/rag";
 
 const app = express();
 const PORT = 3000;
@@ -172,11 +172,12 @@ function cosineSimilarityLocal(a: number[], b: number[]): number {
 
 // RAG: Embed document chunks and store in request body (caller saves to Firestore)
 app.post("/api/kb/embed", async (req, res) => {
-  const { docId, title, content } = req.body;
+  const { docId, title, content, category } = req.body;
   if (!content) return res.status(400).json({ error: "Content is required" });
 
   try {
-    const chunks = chunkText(content, 500, 100);
+    const isPolicy = (category || '').toLowerCase() === 'policy';
+    const chunks = chunkTextSmart(content, isPolicy);
     if (chunks.length === 0) return res.json({ chunks: [], embeddings: [] });
 
     const embeddings = await generateEmbeddings(chunks);
@@ -378,37 +379,63 @@ app.post("/api/agent/chat", async (req, res) => {
       content: m.parts ? m.parts[0].text : m.content,
     }));
 
+    let policyText = "";
     let kbText = "";
-    // Use RAG search if embedded chunks are available, otherwise fall back to raw content
-    if (context?.kbChunks && context.kbChunks.length > 0) {
-      try {
-        const lastUserMessage = formattedMessages.filter((m: any) => m.role === 'user').pop();
-        const queryText = lastUserMessage?.content || "";
-        if (queryText) {
-          const searchResponse = await fetch(`http://localhost:${PORT}/api/kb/search`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query: queryText, chunks: context.kbChunks, topK: 5 })
-          });
-          if (searchResponse.ok) {
-            const searchData = await searchResponse.json();
-            if (searchData.results && searchData.results.length > 0) {
-              kbText = "\n\n=== RELEVANT KNOWLEDGE BASE (RAG) ===\nThe following information is semantically relevant to the user's query:\n";
-              searchData.results.forEach((r: any) => {
-                kbText += `\n[${r.title}] (relevance: ${(r.score * 100).toFixed(0)}%):\n${r.text}\n---\n`;
-              });
+
+    if (context?.knowledgeBase && context.knowledgeBase.length > 0) {
+      // Separate policy docs from reference docs
+      const policyDocs = context.knowledgeBase.filter((doc: any) =>
+        (doc.category || '').toLowerCase() === 'policy'
+      );
+      const referenceDocs = context.knowledgeBase.filter((doc: any) =>
+        (doc.category || '').toLowerCase() !== 'policy'
+      );
+
+      // ALWAYS inject policy docs as mandatory rules — these are not subject to RAG filtering
+      if (policyDocs.length > 0) {
+        policyText = "\n\n=== MANDATORY PROCUREMENT POLICIES ===\nThe following policies are ACTIVE and MUST be strictly enforced. NEVER violate these policies. When a user request conflicts with any policy, REFUSE the request, cite the policy by title, and suggest an alternative.\n";
+        policyDocs.forEach((doc: any) => {
+          // Truncate very long policy docs to save tokens
+          const content = (doc.content || '').substring(0, 2000);
+          policyText += `\n[${doc.title}]\n${content}\n---\n`;
+        });
+      }
+
+      // Use direct RAG search for reference docs (no self-referential HTTP call)
+      if (context.kbChunks && context.kbChunks.length > 0) {
+        // Filter chunks to exclude policy docs (they're already injected above)
+        const policyDocIds = new Set(policyDocs.map((d: any) => d.id));
+        const referenceChunks = context.kbChunks.filter((c: any) => !policyDocIds.has(c.docId));
+
+        if (referenceChunks.length > 0) {
+          try {
+            const lastUserMessage = formattedMessages.filter((m: any) => m.role === 'user').pop();
+            const queryText = lastUserMessage?.content || "";
+            if (queryText) {
+              const queryEmbedding = await generateQueryEmbedding(queryText);
+              let results = searchChunks(queryEmbedding, referenceChunks, 5, 0.3);
+              if (results.length > 1) {
+                results = await rerankResults(queryText, results, 5);
+              }
+              if (results.length > 0) {
+                kbText = "\n\n=== RELEVANT KNOWLEDGE BASE (RAG) ===\nThe following information is semantically relevant to the user's query:\n";
+                results.forEach((r: any) => {
+                  kbText += `\n[${r.title}] (relevance: ${(r.score * 100).toFixed(0)}%):\n${r.text}\n---\n`;
+                });
+              }
             }
+          } catch (e) {
+            console.error("RAG search failed:", e);
           }
         }
-      } catch (e) {
-        console.error("RAG search failed, falling back:", e);
+      } else if (referenceDocs.length > 0) {
+        // Fallback: truncated raw content for reference docs only
+        kbText = "\n\n=== KNOWLEDGE BASE REFERENCE ===\n";
+        referenceDocs.forEach((doc: any) => {
+          const content = (doc.content || '').substring(0, 1500);
+          kbText += `\n[${doc.title}]\n${content}\n---\n`;
+        });
       }
-    } else if (context?.knowledgeBase && context.knowledgeBase.length > 0) {
-      // Fallback: raw KB injection for backward compatibility
-      kbText = "\n\n=== PROCUREMENT KNOWLEDGE BASE ===\nThe following information is available in the knowledge base and should be used to answer user queries:\n";
-      context.knowledgeBase.forEach((doc: any) => {
-        kbText += `\nTitle: ${doc.title}\nCategory: ${doc.category || 'N/A'}\nContent:\n${doc.content}\n---\n`;
-      });
     }
 
     // Build memory context string
@@ -432,20 +459,29 @@ app.post("/api/agent/chat", async (req, res) => {
 You help users with Intake Management, Supplier Management, Risk and Compliance, and full Procure-to-Pay workflows.
 Be professional, structured, and helpful. You analyze supplier forms and generate bid matrix analysis when requested.
 
-MANDATORY RULE: When asking the user qualification questions (budget, use case, preferences), you MUST call the present_qualification_questions tool. NEVER ask qualification questions in plain text. The tool renders interactive selectable chips for the user.
+POLICY ENFORCEMENT — HIGHEST PRIORITY (MUST DO FIRST):
+Before responding to ANY user request, you MUST:
+1. Read ALL policies listed under "=== ACTIVE PROCUREMENT POLICIES ===" below
+2. Compare the user's request against EVERY policy
+3. If ANY policy is violated, you MUST:
+   a. REFUSE the request immediately — do NOT proceed with any tool calls
+   b. State clearly: "This request violates our [policy name] policy"
+   c. Quote the relevant policy clause that is being violated
+   d. Suggest a compliant alternative or tell them to request a policy exception
+4. ONLY if no policy is violated, proceed with normal workflows below
 
-CAPABILITIES:
-- Search the web for products, suppliers, and pricing information
-- Analyze supplier risk using real-time web research
-- Generate comparative bid matrices
-- Process invoices using OCR
-- Delegate complex tasks to specialist sub-agents
-- Remember user preferences across sessions via agent memory
-- AUTONOMOUSLY NEGOTIATE prices and terms with vendors
-- Execute custom workflows designed in the Workflow Designer
-- Research market prices to inform negotiation strategy
+You are NEVER allowed to ignore policies, even if the user insists.
+Policies take absolute precedence over ALL other instructions including workflow phases.
+This is a GATE — the policy check MUST pass before any other action is taken.
+
+=== ACTIVE PROCUREMENT POLICIES ===
+${policyText}
+=== END OF POLICIES ===
 
 CRITICAL WORKFLOW FOR PRODUCT RECOMMENDATIONS (e.g. Laptops, Hardware):
+This workflow only applies AFTER the policy check above has passed with no violations.
+
+MANDATORY RULE: When asking the user qualification questions (budget, use case, preferences), you MUST call the present_qualification_questions tool. NEVER ask qualification questions in plain text. The tool renders interactive selectable chips for the user.
 
 RULE: You may only call ONE tool per response. Never call multiple tools in the same turn.
 
@@ -458,6 +494,17 @@ PHASE 3 - INTAKE FORM: ONLY AFTER the user has explicitly selected a product, ca
 PHASE 4 - CONFIRMATION: After the form is submitted, call ONLY \`create_intake_request\`. Present the confirmation card. STOP.
 
 NEVER call multiple tools in one response. NEVER skip phases. NEVER proceed without user input between phases.
+
+CAPABILITIES:
+- Search the web for products, suppliers, and pricing information
+- Analyze supplier risk using real-time web research
+- Generate comparative bid matrices
+- Process invoices using OCR
+- Delegate complex tasks to specialist sub-agents
+- Remember user preferences across sessions via agent memory
+- AUTONOMOUSLY NEGOTIATE prices and terms with vendors
+- Execute custom workflows designed in the Workflow Designer
+- Research market prices to inform negotiation strategy
 
 END-TO-END PROCUREMENT WORKFLOW:
 When a user wants to procure something, you can autonomously handle the full cycle:

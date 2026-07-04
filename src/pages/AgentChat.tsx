@@ -3,8 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Bot, User, Send, FileText, CheckCircle, Paperclip, Table as TableIcon, Activity, UserPlus, Upload, ChevronDown, ChevronUp, AlertCircle, Loader2, Mic, Square, ListChecks } from 'lucide-react';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Bot, User, Send, FileText, CheckCircle, Paperclip, Table as TableIcon, Activity, Upload, ChevronDown, ChevronUp, AlertCircle, Loader2, Mic, Square, ListChecks } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
 import ReactMarkdown from 'react-markdown';
@@ -625,7 +624,7 @@ export function AgentChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [kbContext, setKbContext] = useState('');
-  const [useContext, setUseContext] = useState(false);
+  const [useContext, setUseContext] = useState(() => localStorage.getItem('kb-context-enabled') !== 'false');
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
@@ -777,70 +776,10 @@ export function AgentChat() {
 
     const userMessage = { role: 'user' as const, content: textToSend, type: 'text' as MessageType };
     setMessages(prev => [...prev, userMessage]);
-    const currentInput = textToSend;
     if (typeof overrideInput !== 'string') {
       setInput('');
     }
     setIsLoading(true);
-
-    // Simulated interactive flows for demonstration
-    const lowerInput = currentInput.toLowerCase();
-    
-    if (lowerInput.includes('catering') || lowerInput.includes('quote')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: '', type: 'upload-prompt' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerInput.includes('bid matrix') || lowerInput.includes('matrix')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: 'Here is the initial bid matrix based on the received supplier quotes.', type: 'bid-matrix' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-    
-    if (lowerInput.includes('new supplier') || lowerInput.includes('onboard')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: '', type: 'supplier-form' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerInput.includes('marketing') || lowerInput.includes('item details')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: '', type: 'item-details' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerInput.includes('select equinox') || lowerInput.includes('select supplier')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: '', type: 'selected-supplier' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerInput.includes('process') || lowerInput.includes('timeline')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: '', type: 'process-timeline' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
-
-    if (lowerInput.includes('impact') || lowerInput.includes('delay') || lowerInput.includes('overdue')) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { role: 'model', content: 'Here is the impact analysis based on recent vendor communications and overdue POs.', type: 'impact-analysis' }]);
-        setIsLoading(false);
-      }, 1000);
-      return;
-    }
 
     // Default API call
     try {
@@ -965,6 +904,23 @@ export function AgentChat() {
                   }
                 }
               } else if (parsed.type === "final") {
+                // Check if create_intake_request was called - force confirmation card
+                const intakeTool = currentToolCalls.find(t => t.name === 'create_intake_request');
+                if (intakeTool && intakeTool.arguments && currentModelMessage.type !== 'intake-confirmation') {
+                  try {
+                    const args = typeof intakeTool.arguments === 'string'
+                      ? JSON.parse(intakeTool.arguments)
+                      : intakeTool.arguments;
+                    currentModelMessage.type = 'intake-confirmation';
+                    (currentModelMessage as any).pendingIntake = {
+                      title: args.title,
+                      department: args.department,
+                      amount: args.amount,
+                      description: args.description,
+                    };
+                  } catch (e) {}
+                }
+
                 // Don't overwrite content if interactive elements are showing
                 const hasInteractiveTools = currentToolCalls.some(t =>
                   t.name === 'present_qualification_questions' ||
@@ -976,7 +932,6 @@ export function AgentChat() {
                 if (!hasInteractiveTools && currentModelMessage.type !== 'qualification-questions' && currentModelMessage.type !== 'intake-confirmation') {
                   currentModelMessage.content = parsed.response;
                 } else if (parsed.response && currentModelMessage.content !== parsed.response) {
-                  // Append text content after interactive elements
                   currentModelMessage.content = (currentModelMessage.content || '') + '\n\n' + parsed.response;
                 }
                 // Update full tool calls if necessary
@@ -1150,11 +1105,6 @@ export function AgentChat() {
 
   return (
     <div className="p-0 md:p-4 flex flex-col h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)]">
-      <div className="mb-4 hidden md:block">
-        <h1 className="text-2xl font-bold tracking-tight">Atlas Agentic Platform</h1>
-        <p className="text-muted-foreground mt-1">Intake Orchestration, Autonomous Sourcing & Negotiation</p>
-      </div>
-
       <Card className="flex-1 flex flex-col min-h-0 bg-background/50 border shadow-sm">
         <CardHeader className="border-b py-3 px-4 bg-white dark:bg-card">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -1162,6 +1112,11 @@ export function AgentChat() {
               <Bot className="h-4 w-4" />
             </div>
             Ask Agent
+            {useContext && (
+              <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800 ml-1">
+                KB Active
+              </Badge>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="flex-1 overflow-hidden p-0 relative bg-muted/20">
@@ -1215,26 +1170,10 @@ export function AgentChat() {
           </div>
         </CardContent>
         <CardFooter className="border-t p-3 bg-white dark:bg-card">
-          <form 
+          <form
             className="flex flex-col w-full gap-2 relative"
             onSubmit={(e) => { e.preventDefault(); handleSend(); }}
           >
-            <div className="flex justify-between items-center px-2">
-              <div className="flex items-center gap-2">
-                <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={useContext}
-                    onClick={() => setUseContext(!useContext)}
-                    className={`w-7 h-4 rounded-full transition-colors relative flex items-center ${useContext ? 'bg-amber-600' : 'bg-muted-foreground/30'}`}
-                  >
-                    <div className={`w-3 h-3 bg-white rounded-full absolute shadow-sm transition-transform ${useContext ? 'translate-x-3.5' : 'translate-x-0.5'}`} />
-                  </button>
-                  Use KB Context
-                </label>
-              </div>
-            </div>
             <div className="flex gap-2">
               <input 
                 type="file" 
@@ -1294,27 +1233,6 @@ export function AgentChat() {
                 </div>
 
               </div>
-            </div>
-            
-            <div className="flex gap-2 flex-wrap mt-2 px-2 pb-1 justify-center md:justify-start">
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("I want to source catering services and I have a quote")} className="text-xs rounded-full h-8 border-dashed bg-muted/30 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200">
-                <Upload className="h-3 w-3 mr-1.5" /> Sourcing + Upload
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("Show the initial bid matrix")} className="text-xs rounded-full h-8 bg-muted/30 hover:bg-purple-50 hover:text-purple-700">
-                <TableIcon className="h-3 w-3 mr-1.5" /> Bid Matrix
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("Start marketing campaign and enter item details")} className="text-xs rounded-full h-8 bg-muted/30 hover:bg-purple-50 hover:text-purple-700">
-                <FileText className="h-3 w-3 mr-1.5" /> Item Details
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("Add a new supplier")} className="text-xs rounded-full h-8 bg-muted/30 hover:bg-purple-50 hover:text-purple-700">
-                <UserPlus className="h-3 w-3 mr-1.5" /> Add Supplier
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("Show review process timeline")} className="text-xs rounded-full h-8 bg-muted/30 hover:bg-purple-50 hover:text-purple-700">
-                <Activity className="h-3 w-3 mr-1.5" /> Process Timeline
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => setInput("Analyze vendor delays and overdue POs")} className="text-xs rounded-full h-8 bg-muted/30 hover:bg-purple-50 hover:text-purple-700">
-                <AlertCircle className="h-3 w-3 mr-1.5" /> Impact Analysis
-              </Button>
             </div>
           </form>
         </CardFooter>

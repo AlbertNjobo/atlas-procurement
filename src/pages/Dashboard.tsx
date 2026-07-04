@@ -65,7 +65,7 @@ export function Dashboard() {
           </CardContent>
         </Card>
         
-        <Link to="/intake?filter=active" className="transition-transform hover:scale-105 active:scale-95 block">
+        <Link to="/app/intake?filter=active" className="transition-transform hover:scale-105 active:scale-95 block">
           <Card className="h-full border-blue-200 dark:border-blue-800 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Active Requests</CardTitle>
@@ -82,7 +82,7 @@ export function Dashboard() {
           </Card>
         </Link>
 
-        <Link to="/intake?filter=pending" className="transition-transform hover:scale-105 active:scale-95 block">
+        <Link to="/app/intake?filter=pending" className="transition-transform hover:scale-105 active:scale-95 block">
           <Card className="h-full border-yellow-200 dark:border-yellow-800 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Pending Approvals</CardTitle>
@@ -99,7 +99,7 @@ export function Dashboard() {
           </Card>
         </Link>
 
-        <Link to="/suppliers" className="transition-transform hover:scale-105 active:scale-95 block">
+        <Link to="/app/suppliers" className="transition-transform hover:scale-105 active:scale-95 block">
           <Card className="h-full border-orange-200 dark:border-orange-800 shadow-sm hover:shadow-md transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Active Suppliers</CardTitle>
@@ -154,7 +154,7 @@ export function Dashboard() {
                 <div 
                   key={i} 
                   className="flex items-center justify-between border-b pb-4 last:border-0 last:pb-0 cursor-pointer hover:bg-muted/50 p-2 rounded-md transition-colors"
-                  onClick={() => navigate(`/intake?id=${item.id}`)}
+                  onClick={() => navigate(`/app/intake?id=${item.id}`)}
                 >
                   <div>
                     <p className="text-sm font-medium">{item.name}</p>

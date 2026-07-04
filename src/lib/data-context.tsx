@@ -284,7 +284,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setProcurementCatalog(data);
     }, (error) => handleFirestoreError(error, OperationType.LIST, 'procurementCatalog'));
 
-    const kbQuery = query(collection(db, 'knowledgeBase'));
+    const kbQuery = query(collection(db, 'knowledgeBase'), where("userId", "==", user.uid));
     const unsubKb = onSnapshot(kbQuery, (snap) => {
       const data = snap.docs.map(d => ({ id: d.id, ...d.data() } as any));
       setKnowledgeBase(data);

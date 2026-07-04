@@ -77,14 +77,25 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 export function searchChunks(
   queryEmbedding: number[],
   chunks: Array<{ text: string; embedding: number[]; docId: string; title: string }>,
-  topK: number = 5
+  topK: number = 5,
+  minScore: number = 0.3
 ): Array<{ text: string; docId: string; title: string; score: number }> {
   const scored = chunks.map((chunk) => ({
     ...chunk,
     score: cosineSimilarity(queryEmbedding, chunk.embedding),
   }));
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, topK);
+  return scored.filter((chunk) => chunk.score >= minScore).slice(0, topK);
+}
+
+// Smart chunking: smaller chunks for short policy docs, larger for long reference docs
+export function chunkTextSmart(text: string, isPolicy: boolean = false): string[] {
+  if (isPolicy) {
+    // Policies need fine-grained chunks so individual rules aren't diluted
+    return chunkText(text, 200, 50);
+  }
+  // Reference docs use larger chunks for better context
+  return chunkText(text, 500, 100);
 }
 
 // Rerank results using qwen3-rerank

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Upload, FileText, Trash2, Search, Loader2, Folder, ChevronDown, ChevronRight } from 'lucide-react';
+import { Upload, FileText, Trash2, Search, Loader2, Folder, ChevronDown, ChevronRight, Shield } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { db } from '../lib/firebase';
 import { collection, addDoc, getDocs, deleteDoc, doc, query, where, orderBy } from 'firebase/firestore';
@@ -56,6 +56,13 @@ export function KnowledgeBase() {
   // Preview state
   const [previewDoc, setPreviewDoc] = useState<KnowledgeDocument | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [kbEnabled, setKbEnabled] = useState(() => localStorage.getItem('kb-context-enabled') !== 'false');
+
+  const toggleKbEnabled = () => {
+    const next = !kbEnabled;
+    setKbEnabled(next);
+    localStorage.setItem('kb-context-enabled', String(next));
+  };
 
   useEffect(() => {
     // Initialize LiteParse WASM module
@@ -167,10 +174,11 @@ export function KnowledgeBase() {
         const embedResponse = await fetch('/api/kb/embed', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            docId: docRef.id, 
-            title: pendingUpload.title, 
-            content: pendingUpload.text 
+          body: JSON.stringify({
+            docId: docRef.id,
+            title: pendingUpload.title,
+            content: pendingUpload.text,
+            category: suggestedCategory
           })
         });
         if (embedResponse.ok) {
@@ -226,10 +234,11 @@ export function KnowledgeBase() {
         const embedResponse = await fetch('/api/kb/embed', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            docId: docRef.id, 
-            title: instructionTitle, 
-            content: instructionContent 
+          body: JSON.stringify({
+            docId: docRef.id,
+            title: instructionTitle,
+            content: instructionContent,
+            category: instructionCategory
           })
         });
         if (embedResponse.ok) {
@@ -291,6 +300,20 @@ export function KnowledgeBase() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Knowledge Base</h1>
           <p className="text-muted-foreground mt-1">Upload policies and documents for the AI Agent to reference.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors select-none">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={kbEnabled}
+              onClick={toggleKbEnabled}
+              className={`w-9 h-5 rounded-full transition-colors relative flex items-center ${kbEnabled ? 'bg-amber-600' : 'bg-muted-foreground/30'}`}
+            >
+              <div className={`w-3.5 h-3.5 bg-white rounded-full absolute shadow-sm transition-transform ${kbEnabled ? 'translate-x-[18px]' : 'translate-x-[3px]'}`} />
+            </button>
+            AI Agent uses KB context
+          </label>
         </div>
         <div>
           <Input 
@@ -369,8 +392,12 @@ export function KnowledgeBase() {
                           <CardTitle className="text-base font-semibold line-clamp-1">{doc.title}</CardTitle>
                           <CardDescription className="text-xs line-clamp-1">{doc.fileName}</CardDescription>
                         </div>
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-primary" />
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${(doc as any).category === 'Policy' ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-primary/10'}`}>
+                          {(doc as any).category === 'Policy' ? (
+                            <Shield className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-primary" />
+                          )}
                         </div>
                       </CardHeader>
                       <CardContent>
@@ -379,10 +406,19 @@ export function KnowledgeBase() {
                         </div>
                         <div className="flex justify-between items-center">
                           <div className="flex gap-2">
-                            <Badge variant="outline" className="text-[10px]">Indexed</Badge>
-                            {(doc as any).category && (
-                              <Badge variant="secondary" className="text-[10px]">{(doc as any).category}</Badge>
+                            {(doc as any).chunks && (doc as any).chunks.length > 0 ? (
+                              <Badge variant="outline" className="text-[10px]">Indexed</Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-[10px] text-muted-foreground">Not Indexed</Badge>
                             )}
+                            {(doc as any).category === 'Policy' ? (
+                              <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 dark:border-amber-800">
+                                <Shield className="h-3 w-3 mr-1" />
+                                Policy
+                              </Badge>
+                            ) : (doc as any).category ? (
+                              <Badge variant="secondary" className="text-[10px]">{(doc as any).category}</Badge>
+                            ) : null}
                           </div>
                           <Button 
                             variant="ghost" 

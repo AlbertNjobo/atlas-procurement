@@ -5,7 +5,7 @@ export function BidMatrixCard() {
   return (
     <div className="border rounded-lg overflow-hidden bg-background shadow-sm w-full max-w-3xl">
       <div className="bg-purple-700 p-3 text-white">
-        <h3 className="font-medium text-sm">Initial Bid Matrix for SE-2025-0001 — Welcome Kits Sourcing</h3>
+        <h3 className="font-medium text-sm">Initial Bid Matrix for SE-2025-0001: Welcome Kits Sourcing</h3>
       </div>
       <Table>
         <TableHeader>
@@ -21,7 +21,7 @@ export function BidMatrixCard() {
         <TableBody>
           <TableRow>
             <TableCell className="border-r text-muted-foreground">1</TableCell>
-            <TableCell className="border-r font-medium text-sm">Unit Price — Welcome Kit</TableCell>
+            <TableCell className="border-r font-medium text-sm">Unit Price: Welcome Kit</TableCell>
             <TableCell className="border-r text-sm">USD 25.00</TableCell>
             <TableCell className="border-r text-sm">USD 27.50</TableCell>
             <TableCell className="border-r text-sm">USD 28.45</TableCell>
@@ -29,7 +29,7 @@ export function BidMatrixCard() {
           </TableRow>
           <TableRow>
             <TableCell className="border-r text-muted-foreground">2</TableCell>
-            <TableCell className="border-r font-medium text-sm">Line Total — Welcome Kit (100 EA)</TableCell>
+            <TableCell className="border-r font-medium text-sm">Line Total: Welcome Kit (100 EA)</TableCell>
             <TableCell className="border-r text-sm">USD 2,500.00</TableCell>
             <TableCell className="border-r text-sm">USD 2,750.00</TableCell>
             <TableCell className="border-r text-sm">USD 2,845.00</TableCell>

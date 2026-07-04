@@ -163,7 +163,7 @@ export function RequestTracker() {
   if (!req) {
     return (
       <div className="p-6">
-        <Link to="/requisitions" className={buttonVariants({ variant: "ghost", className: "mb-4" })}>
+        <Link to="/app/requisitions" className={buttonVariants({ variant: "ghost", className: "mb-4" })}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Back to Requisitions
         </Link>
         <Card>
@@ -199,7 +199,7 @@ export function RequestTracker() {
     <div className="p-6 max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Link to="/requisitions" className={buttonVariants({ variant: "ghost", className: "mb-2 -ml-4" })}>
+          <Link to="/app/requisitions" className={buttonVariants({ variant: "ghost", className: "mb-2 -ml-4" })}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Requisitions
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">Lifecycle Tracker</h1>
@@ -287,7 +287,7 @@ export function RequestTracker() {
               <div className="text-center py-8">
                 <p className="text-muted-foreground mb-4">No RFQ has been created for this requisition yet.</p>
                 {req.status === 'Approved' && (
-                  <Link to="/rfqs" className={buttonVariants({ variant: "outline" })}>
+                  <Link to="/app/rfqs" className={buttonVariants({ variant: "outline" })}>
                     <Plus className="h-4 w-4 mr-2" /> Create RFQ
                   </Link>
                 )}

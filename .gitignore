@@ -100,3 +100,10 @@ lerna-debug.log*
 # Un-comment the lines below if you don't want to commit your local firestore/ASR test scripts
 # test-firestore*
 # test_asr.js
+.aidesigner/*
+!.aidesigner/.gitkeep
+
+## Agents file 
+.claude/
+.agents/
+.mimocode/

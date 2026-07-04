@@ -43,7 +43,7 @@ export function AppBreadcrumb() {
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem className="hidden md:block">
-          <BreadcrumbLink render={<Link to="/" />}>
+          <BreadcrumbLink render={<Link to="/app" />}>
             Dashboard
           </BreadcrumbLink>
         </BreadcrumbItem>

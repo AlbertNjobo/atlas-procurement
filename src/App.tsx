@@ -9,11 +9,12 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarHeader, SidebarMenu, S
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { UserRole } from './types';
 import { VendorPortal } from './pages/VendorPortal';
-import { Home, ClipboardList, Users, Settings as SettingsIcon, Bot, LogOut, Package, Network, Briefcase, ShoppingCart, FileText, Send, Database, Menu } from 'lucide-react';
+import { Home, ClipboardList, Users, Settings as SettingsIcon, Bot, LogOut, Network, Briefcase, ShoppingCart, FileText, Send, Database, Menu } from 'lucide-react';
 import { Dashboard } from './pages/Dashboard';
 import { AgentChat } from './pages/AgentChat';
 import { Suppliers } from './pages/Suppliers';
 import { Login } from './pages/Login';
+import { Landing } from './pages/Landing';
 import { WorkflowDesigner } from './pages/WorkflowDesigner';
 import { Settings } from './pages/Settings';
 import { ProcurementCatalog } from './pages/ProcurementCatalog';
@@ -47,20 +48,20 @@ function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4 group-data-[collapsible=icon]:p-2 border-b">
         <div className="flex items-center gap-2 font-bold text-xl group-data-[collapsible=icon]:justify-center">
-          <Package className="h-6 w-6 text-primary shrink-0" />
+          <img src="/atlas-icon.svg" alt="Atlas" className="h-6 w-6 shrink-0" />
           <span className="group-data-[collapsible=icon]:hidden">Atlas</span>
         </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarMenu className="px-2 pt-4 gap-1">
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Dashboard" render={<a href="/" />}>
+            <SidebarMenuButton tooltip="Dashboard" render={<a href="/app" />}>
               <Home />
               <span>Dashboard</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="AI Agent (⌘K / Ctrl+K)" render={<a href="/agent" />}>
+            <SidebarMenuButton tooltip="AI Agent (⌘K / Ctrl+K)" render={<a href="/app/agent" />}>
               <Bot />
               <span>AI Agent</span>
               <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100 group-data-[collapsible=icon]:hidden">
@@ -73,13 +74,13 @@ function AppSidebar() {
             <p className="px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Employee / Requester</p>
           </div>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Procurement Catalog" render={<a href="/catalog" />}>
+            <SidebarMenuButton tooltip="Procurement Catalog" render={<a href="/app/catalog" />}>
               <ShoppingCart />
               <span>Procurement Catalog</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Purchase Requisitions (⌘N / Ctrl+N for New)" render={<a href="/requisitions" />}>
+            <SidebarMenuButton tooltip="Purchase Requisitions (⌘N / Ctrl+N for New)" render={<a href="/app/requisitions" />}>
               <FileText />
               <span>Purchase Requisitions</span>
             </SidebarMenuButton>
@@ -89,19 +90,19 @@ function AppSidebar() {
             <p className="px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Procurement & Sourcing</p>
           </div>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Suppliers" render={<a href="/suppliers" />}>
+            <SidebarMenuButton tooltip="Suppliers" render={<a href="/app/suppliers" />}>
               <Users />
               <span>Supplier Directory</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="RFQs & Bids" render={<a href="/rfqs" />}>
+            <SidebarMenuButton tooltip="RFQs & Bids" render={<a href="/app/rfqs" />}>
               <Send />
               <span>RFQs & Bids</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Workflows" render={<a href="/workflows" />}>
+            <SidebarMenuButton tooltip="Workflows" render={<a href="/app/workflows" />}>
               <Network />
               <span>Workflows</span>
             </SidebarMenuButton>
@@ -111,7 +112,7 @@ function AppSidebar() {
             <p className="px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">External</p>
           </div>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Vendor Portal" render={<a href="/vendors" />}>
+            <SidebarMenuButton tooltip="Vendor Portal" render={<a href="/app/vendors" />}>
               <Briefcase />
               <span>Vendor Portal</span>
             </SidebarMenuButton>
@@ -121,13 +122,13 @@ function AppSidebar() {
             <p className="px-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">System</p>
           </div>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Knowledge Base" render={<a href="/knowledge-base" />}>
+            <SidebarMenuButton tooltip="Knowledge Base" render={<a href="/app/knowledge-base" />}>
               <Database />
               <span>Knowledge Base</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings" render={<a href="/settings" />}>
+            <SidebarMenuButton tooltip="Settings" render={<a href="/app/settings" />}>
               <SettingsIcon />
               <span>Settings</span>
             </SidebarMenuButton>
@@ -180,7 +181,7 @@ function AppLayout() {
     <div className="flex flex-col flex-1 min-w-0 overflow-hidden h-screen">
       <header className="md:hidden flex h-14 items-center justify-between border-b bg-background px-4 shrink-0">
         <div className="flex items-center gap-2 font-bold text-lg">
-          <Package className="h-5 w-5 text-primary" />
+          <img src="/atlas-icon.svg" alt="Atlas" className="h-5 w-5" />
           <span>Atlas</span>
         </div>
         <div className="flex items-center gap-1">
@@ -228,8 +229,9 @@ export default function App() {
           <Router>
             <GlobalShortcuts />
             <Routes>
+              <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
-              <Route path="/*" element={
+              <Route path="/app/*" element={
                 <PrivateRoute>
                   <SidebarProvider>
                     <AppSidebar />
