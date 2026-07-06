@@ -6,6 +6,7 @@
 graph TB
     subgraph Browser["Browser — React + Vite + Tailwind"]
         UI[Dashboard / Agent Chat / Suppliers / RFQs / KB]
+        MIC[Mic Button<br/>Speech-to-Text]
     end
 
     subgraph Alibaba["Alibaba Cloud SAS — Docker"]
@@ -14,8 +15,9 @@ graph TB
             subgraph App["Node.js App — server.ts"]
                 Agent[Agent Chat Endpoint<br/>streaming NDJSON]
                 RAG[RAG Pipeline<br/>Zvec vector search + rerank]
-                Tools[Tool Execution<br/>20+ tools]
+                Tools[Tool Execution<br/>25 tools]
                 Memory[Memory Service<br/>cross-session recall]
+                Transcribe[Transcribe Endpoint<br/>/api/agent/transcribe]
             end
         end
         ZVEC[(Zvec<br/>kb_chunks + agent_memories<br/>HNSW vector index)]
@@ -26,19 +28,21 @@ graph TB
     end
 
     subgraph QwenCloud["Qwen Cloud — DashScope API"]
-        Chat[qwen3.5-plus<br/>Chat + Tool Calling]
+        Chat[qwen3.5-plus<br/>Chat + Tool Calling<br/>+ Web Search]
         Embed[text-embedding-v4<br/>1024d Vectors]
-        Rerank[qwen3-rerank<br/>Cross-Attention]
-        Vision[qwen3.5-plus<br/>Vision / OCR]
-        Search[enable_search<br/>Web Research]
+        Rerank[qwen3-rerank<br/>Cross-Attention Reranking]
+        Vision[qwen3.5-plus<br/>Invoice OCR + Vision]
+        Speech[qwen3.5-omni-flash<br/>Speech-to-Text]
+        Search[enable_search<br/>Real-time Web Research]
+        Flash[qwen3.6-flash<br/>Sub-Agent Specialist]
     end
 
     subgraph Firebase["Firebase"]
         Auth[Authentication]
-        FS[(Firestore<br/>suppliers / intakes / rfqs<br/>bids / purchaseOrders<br/>knowledgeBase)]
+        FS[(Firestore<br/>suppliers / intakes / rfqs<br/>bids / purchaseOrders<br/>knowledgeBase / users)]
     end
 
-    subgraph Specialist["Specialist Sub-Agents"]
+    subgraph Specialist["Multi-Agent System"]
         Risk[Risk Analyst<br/>qwen3.6-flash]
         Bid[Bid Optimizer<br/>qwen3.6-flash]
         Compliance[Compliance Checker<br/>qwen3.6-flash]
@@ -47,6 +51,9 @@ graph TB
     DNS --> NGINX
     NGINX --> Agent
     UI -->|HTTP POST| DNS
+    UI -->|Microphone| MIC
+    MIC -->|base64 audio| Transcribe
+    Transcribe -->|transcribed text| Agent
     Agent -->|streaming NDJSON| UI
     Agent --> Chat
     Chat -->|tool_calls| Tools
@@ -61,9 +68,29 @@ graph TB
     Tools --> Risk
     Tools --> Bid
     Tools --> Compliance
+    Transcribe --> Speech
     UI --> Auth
     Auth --> FS
 ```
+
+## Qwen Cloud API Usage Map
+
+| API Endpoint | Model | Used By | Purpose |
+|-------------|-------|---------|---------|
+| `/chat/completions` | qwen3.5-plus | Agent Chat | Main agent reasoning + tool calling |
+| `/chat/completions` | qwen3.5-plus | evaluate_supplier_risk | AI risk assessment with web search |
+| `/chat/completions` | qwen3.5-plus | generate_bid_matrix | Comparative bid analysis |
+| `/chat/completions` | qwen3.5-plus | suggest_procurement_items | Product research + web search |
+| `/chat/completions` | qwen3.5-plus | negotiate_with_vendor | Market research + negotiation strategy |
+| `/chat/completions` | qwen3.5-plus | research_market_price | Pricing research |
+| `/chat/completions` | qwen3.5-plus | process_invoice | Invoice OCR via vision |
+| `/chat/completions` | qwen3.5-plus | documents/classify | Document classification + summary |
+| `/chat/completions` | qwen3.5-plus | memory/summarize | Conversation summarization |
+| `/chat/completions` | qwen3.6-flash | delegate_to_specialist | Sub-agent specialist tasks |
+| `/embeddings` | text-embedding-v4 | RAG Pipeline | 1024d document + query embeddings |
+| `/reranks` | qwen3-rerank | RAG Pipeline | Cross-attention result reranking |
+| `/chat/completions` | qwen3.5-omni-flash | /api/agent/transcribe | Speech-to-text transcription |
+| `/responses` | qwen3.5-plus | Agent Responses API | Web extractor + image search |
 
 ## Data Flow — Agent Chat
 
@@ -88,7 +115,7 @@ sequenceDiagram
     S->>Q: Rerank chunks with qwen3-rerank
     Q-->>S: Ranked results
     
-    S->>Q: Chat completion (streaming)
+    S->>Q: Chat completion (streaming, qwen3.5-plus)
     Q-->>S: Tool call: present_qualification_questions
     S-->>F: tool_start + tool_result (NDJSON)
     F-->>U: Interactive qualification chips
@@ -97,7 +124,7 @@ sequenceDiagram
     F->>S: POST /api/agent/chat
     S->>Q: Chat completion
     Q-->>S: Tool call: suggest_procurement_items
-    S->>Q: Web search for product images
+    S->>Q: Web search for product images (enable_search)
     S-->>F: Product cards with images
     F-->>U: View product recommendations
     
@@ -110,6 +137,28 @@ sequenceDiagram
     F->>DB: addDoc(purchaseRequisitions, ...)
     DB-->>F: docRef.id
     F-->>U: "Requisition REQ-xxx created"
+```
+
+## Data Flow — Speech-to-Text
+
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant S as Server
+    participant Q as Qwen Cloud
+
+    U->>F: Clicks mic button
+    F->>F: navigator.mediaDevices.getUserMedia()
+    F->>F: MediaRecorder captures audio (WebM)
+    U->>F: Clicks stop
+    F->>F: Convert blob to base64
+    F->>S: POST /api/agent/transcribe
+    S->>Q: chat.completions (qwen3.5-omni-flash)
+    Note over S,Q: input_audio: base64 audio data
+    Q-->>S: Transcribed text
+    S-->>F: { text: "I need 10 laptops..." }
+    F-->>U: Text appended to input field
 ```
 
 ## RAG Pipeline (Zvec-powered)
@@ -172,5 +221,5 @@ graph TB
 | App Server | Node.js + Express | API routes, agent chat, RAG |
 | Vector DB | Zvec (in-process) | HNSW vector search, WAL persistence |
 | Database | Firebase Firestore | Structured data, auth, real-time sync |
-| AI | Qwen Cloud (DashScope) | Chat, embeddings, reranking, vision, web search |
+| AI | Qwen Cloud (DashScope) | Chat, embeddings, reranking, vision, speech, web search |
 | Hosting | Alibaba Cloud SAS | Docker container, 2 vCPU, 2 GiB |

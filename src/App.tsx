@@ -205,7 +205,6 @@ function AppLayout() {
       <main className="flex-1 overflow-auto bg-muted/20">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/agent" element={<AgentChat />} />
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/catalog" element={<ProcurementCatalog />} />
           <Route path="/requisitions" element={<Requisitions />} />
@@ -231,6 +230,11 @@ export default function App() {
             <Routes>
               <Route path="/" element={<Landing />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/app/agent" element={
+                <PrivateRoute>
+                  <AgentChat />
+                </PrivateRoute>
+              } />
               <Route path="/app/*" element={
                 <PrivateRoute>
                   <SidebarProvider>

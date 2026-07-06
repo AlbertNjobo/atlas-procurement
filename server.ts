@@ -6,6 +6,8 @@ import "dotenv/config";
 import { agentTools } from "./src/lib/agent-tools";
 import { chunkText, chunkTextSmart, generateEmbeddings, generateQueryEmbedding, rerankResults } from "./src/lib/rag";
 import { initZvecStore, insertChunks, searchChunks as zvecSearch, insertMemory, searchMemories } from "./src/lib/zvec-store";
+import { db } from "./src/lib/firebase";
+import { doc, updateDoc, addDoc, collection } from "firebase/firestore";
 
 const app = express();
 const PORT = 3000;
@@ -347,15 +349,18 @@ app.post("/api/agent/transcribe", async (req, res) => {
       return res.status(400).json({ error: "Audio data is required" });
     }
 
-    const completion = await openai.chat.completions.create({
-      model: "qwen3.5-omni-flash",
-      messages: [
-        { role: "system", content: "Transcribe the following audio exactly as spoken. Output only the transcription text. Ignore non-speech sounds. Respond ONLY with the transcript text, no markdown, no other text." },
-        { role: "user", content: [
-          { type: "input_audio", input_audio: { data: audioData, format: format || "wav" } }
-        ] }
-      ]
-    });
+    const completion = await Promise.race([
+      openai.chat.completions.create({
+        model: "qwen3.5-omni-flash",
+        messages: [
+          { role: "system", content: "Transcribe the following audio exactly as spoken. Output only the transcription text. Ignore non-speech sounds. Respond ONLY with the transcript text, no markdown, no other text." },
+          { role: "user", content: [
+            { type: "input_audio", input_audio: { data: audioData, format: format || "wav" } }
+          ] }
+        ]
+      }),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Transcription timeout')), 30000))
+    ]) as any;
     
     res.json({ text: completion.choices[0].message.content });
   } catch (error) {
@@ -365,7 +370,7 @@ app.post("/api/agent/transcribe", async (req, res) => {
 });
 
 app.post("/api/agent/chat", async (req, res) => {
-  const { messages, context } = req.body;
+  const { messages, context, model } = req.body;
   if (!process.env.QWEN_API_KEY || process.env.QWEN_API_KEY === "sk-...") {
     res.setHeader("Content-Type", "application/x-ndjson");
     res.setHeader("Transfer-Encoding", "chunked");
@@ -561,7 +566,7 @@ IMPORTANT: NEVER combine Qualifying, Recommending, and Intake Form phases. You M
       const toolCallsAccumulator: Record<number, any> = {};
 
       const stream = await openai.chat.completions.create({
-        model: "qwen3.5-plus",
+        model: model || "qwen3.5-plus",
         messages: currentMessages,
         tools: agentTools as any,
         stream: true,
@@ -776,17 +781,24 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
               result = JSON.stringify({ status: 'Matrix Generated (Basic)', winning_supplier: args.supplier_ids?.[0], reasoning: 'Basic analysis - detailed review recommended.' });
             }
           } else if (tc.name === 'update_intake_status') {
-            // Return data for client-side Firestore update
-            result = JSON.stringify({
-              success: true,
-              intake_id: args.intake_id,
-              new_status: args.new_status,
-              message: `Status updated to "${args.new_status}" for intake ${args.intake_id}.`
-            });
+            try {
+              await updateDoc(doc(db, 'purchaseRequisitions', args.intake_id), {
+                status: args.new_status,
+              });
+              result = JSON.stringify({
+                success: true,
+                intake_id: args.intake_id,
+                new_status: args.new_status,
+                message: `Status updated to "${args.new_status}" for intake ${args.intake_id}.`
+              });
+            } catch (e) {
+              console.error("Update intake status error:", e);
+              result = JSON.stringify({ success: false, message: "Failed to update status" });
+            }
           } else if (tc.name === 'suggest_procurement_items') {
             try {
-              // Step 1: Use Qwen with web search to research real products
-              const searchResponse = await openai!.chat.completions.create({
+              // Step 1: Use Qwen with web search to research real products (with 15s timeout)
+              const searchPromise = openai!.chat.completions.create({
                 model: "qwen3.5-plus",
                 messages: [{
                   role: "user",
@@ -795,6 +807,8 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
                 temperature: 0.2,
                 extra_body: { enable_search: true, search_options: { search_strategy: "agent" } }
               } as any);
+              const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Web search timeout')), 15000));
+              const searchResponse = await Promise.race([searchPromise, timeoutPromise]) as any;
 
               const content = searchResponse.choices[0]?.message?.content || '[]';
               const webItems = JSON.parse(content.replace(/```json/g, '').replace(/```/g, '').trim());
@@ -803,12 +817,14 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
               const agentItems = args.items || [];
               const mergedItems = agentItems.map((agentItem: any, i: number) => {
                 const webItem = webItems[i] || {};
+                const hasWebData = webItem.name && webItem.name !== agentItem.name;
                 return {
                   name: webItem.name || agentItem.name,
                   description: webItem.description || agentItem.description,
                   estimated_price: webItem.estimated_price || agentItem.estimated_price,
                   image_url: webItem.image_url || `https://placehold.co/400x300/f3f4f6/6b7280?text=${encodeURIComponent(agentItem.name)}`,
-                  badges: webItem.badges || agentItem.badges || []
+                  badges: webItem.badges || agentItem.badges || [],
+                  source: hasWebData ? 'online' : 'catalog'
                 };
               });
 
@@ -818,7 +834,8 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
               // Fallback to agent-provided items with placeholder images
               const fallbackItems = (args.items || []).map((item: any) => ({
                 ...item,
-                image_url: item.image_url || `https://placehold.co/400x300/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`
+                image_url: item.image_url || `https://placehold.co/400x300/f3f4f6/6b7280?text=${encodeURIComponent(item.name)}`,
+                source: item.source || 'catalog'
               }));
               result = JSON.stringify({ items: fallbackItems });
             }
@@ -960,72 +977,126 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
               message: `Memory stored: ${args.content.substring(0, 50)}...`
             });
           } else if (tc.name === 'create_rfq') {
-            const rfqId = `RFQ-${Date.now()}`;
-            const rfq = {
-              title: args.title,
-              description: args.description,
-              supplierIds: args.supplier_ids,
-              dueDate: args.due_date || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
-              budgetRange: args.budget_range,
-              status: 'Draft',
-              createdBy: context?.userId || 'agent',
-              createdAt: new Date().toISOString(),
-              auditTrail: [{ action: 'created', actorId: 'agent', timestamp: new Date().toISOString() }]
-            };
-            result = JSON.stringify({
-              success: true,
-              rfq: { id: rfqId, ...rfq },
-              message: `RFQ "${args.title}" created. Ready to publish to ${args.supplier_ids.length} suppliers.`
-            });
+            try {
+              const rfqData = {
+                title: args.title,
+                description: args.description || '',
+                supplierIds: args.supplier_ids,
+                dueDate: args.due_date || new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0],
+                budgetRange: args.budget_range || '',
+                status: 'Draft',
+                createdBy: context?.userId || 'agent',
+                createdAt: new Date().toISOString(),
+                auditTrail: [{ action: 'created', actorId: 'agent', timestamp: new Date().toISOString() }]
+              };
+              const docRef = await addDoc(collection(db, 'rfqs'), rfqData);
+              result = JSON.stringify({
+                success: true,
+                rfq: { id: docRef.id, ...rfqData },
+                message: `RFQ "${args.title}" created with ID ${docRef.id}. Ready to publish to ${args.supplier_ids.length} suppliers.`
+              });
+            } catch (e) {
+              console.error("Create RFQ error:", e);
+              result = JSON.stringify({ success: false, message: "Failed to create RFQ" });
+            }
           } else if (tc.name === 'select_bid') {
-            // Select a winning bid and create PO
-            result = JSON.stringify({
-              success: true,
-              rfq_id: args.rfq_id,
-              bid_id: args.bid_id,
-              supplier_id: args.supplier_id,
-              amount: args.amount,
-              reasoning: args.reasoning,
-              status: 'bid_selected',
-              message: `Bid selected from supplier ${args.supplier_id} for ${args.amount}. Ready to create Purchase Order.`
-            });
+            try {
+              // Mark the selected bid
+              await updateDoc(doc(db, 'bids', args.bid_id), { status: 'Selected' });
+              // Update RFQ status
+              await updateDoc(doc(db, 'rfqs', args.rfq_id), { status: 'Awarded' });
+              result = JSON.stringify({
+                success: true,
+                rfq_id: args.rfq_id,
+                bid_id: args.bid_id,
+                supplier_id: args.supplier_id,
+                amount: args.amount,
+                reasoning: args.reasoning,
+                status: 'bid_selected',
+                message: `Bid selected from supplier ${args.supplier_id} for ${args.amount}. Ready to create Purchase Order.`
+              });
+            } catch (e) {
+              console.error("Select bid error:", e);
+              result = JSON.stringify({ success: false, message: "Failed to select bid" });
+            }
           } else if (tc.name === 'create_purchase_order') {
-            const poId = `PO-${Date.now()}`;
-            result = JSON.stringify({
-              success: true,
-              po: {
-                id: poId,
+            try {
+              const poData = {
                 supplierId: args.supplier_id,
-                items: args.items,
+                items: args.items || [],
                 totalAmount: args.total_amount,
                 status: 'Pending Approval',
+                createdBy: context?.userId || 'agent',
                 createdAt: new Date().toISOString()
-              },
-              message: `Purchase Order ${poId} created for ${args.total_amount}. Awaiting approval.`
-            });
+              };
+              const docRef = await addDoc(collection(db, 'purchaseOrders'), poData);
+              result = JSON.stringify({
+                success: true,
+                po: {
+                  id: docRef.id,
+                  ...poData
+                },
+                message: `Purchase Order ${docRef.id} created for ${args.total_amount}. Awaiting approval.`
+              });
+            } catch (e) {
+              console.error("Create PO error:", e);
+              result = JSON.stringify({ success: false, message: "Failed to create purchase order" });
+            }
           } else if (tc.name === 'track_delivery') {
-            result = JSON.stringify({
-              po_id: args.po_id,
-              status: 'In Transit',
-              estimated_delivery: new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0],
-              carrier: 'FedEx',
-              tracking_number: `FX${Math.random().toString(36).substring(2, 12).toUpperCase()}`,
-              updates: [
-                { date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0], status: 'Order Placed' },
-                { date: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0], status: 'Shipped' },
-                { date: new Date().toISOString().split('T')[0], status: 'In Transit' }
-              ]
-            });
+            try {
+              const trackingNumber = `FX${Math.random().toString(36).substring(2, 12).toUpperCase()}`;
+              const estimatedDelivery = new Date(Date.now() + 5 * 86400000).toISOString().split('T')[0];
+              // Update PO with delivery info
+              await updateDoc(doc(db, 'purchaseOrders', args.po_id), {
+                status: 'In Transit',
+                trackingNumber,
+                estimatedDelivery,
+                carrier: 'FedEx',
+              });
+              result = JSON.stringify({
+                po_id: args.po_id,
+                status: 'In Transit',
+                estimated_delivery: estimatedDelivery,
+                carrier: 'FedEx',
+                tracking_number: trackingNumber,
+                updates: [
+                  { date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0], status: 'Order Placed' },
+                  { date: new Date(Date.now() - 1 * 86400000).toISOString().split('T')[0], status: 'Shipped' },
+                  { date: new Date().toISOString().split('T')[0], status: 'In Transit' }
+                ]
+              });
+            } catch (e) {
+              console.error("Track delivery error:", e);
+              result = JSON.stringify({ po_id: args.po_id, status: 'Unknown', message: 'Tracking unavailable' });
+            }
           } else if (tc.name === 'process_payment') {
-            result = JSON.stringify({
-              success: true,
-              po_id: args.po_id,
-              invoice_id: args.invoice_id,
-              amount: args.amount,
-              status: 'payment_processed',
-              three_way_match: 'passed',
-              message: `Payment of ${args.amount} processed for PO ${args.po_id}. 3-way match validated.`
-            });
+            try {
+              // Update PO payment status
+              await updateDoc(doc(db, 'purchaseOrders', args.po_id), {
+                paymentStatus: 'Paid',
+                status: 'Paid',
+                paidAt: new Date().toISOString(),
+              });
+              // Update invoice status if provided
+              if (args.invoice_id) {
+                await updateDoc(doc(db, 'invoices', args.invoice_id), {
+                  status: 'Paid',
+                  paidAt: new Date().toISOString(),
+                });
+              }
+              result = JSON.stringify({
+                success: true,
+                po_id: args.po_id,
+                invoice_id: args.invoice_id,
+                amount: args.amount,
+                status: 'payment_processed',
+                three_way_match: 'passed',
+                message: `Payment of ${args.amount} processed for PO ${args.po_id}. 3-way match validated.`
+              });
+            } catch (e) {
+              console.error("Process payment error:", e);
+              result = JSON.stringify({ success: false, message: "Failed to process payment" });
+            }
           } else if (tc.name === 'process_invoice') {
             // Use Qwen vision to extract invoice data
             try {

@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Bot, User, Send, FileText, CheckCircle, Paperclip, Table as TableIcon, Activity, Upload, ChevronDown, ChevronUp, AlertCircle, Loader2, Mic, Square, ListChecks, Plus, MessageSquare, Trash2, PanelLeftClose, PanelLeft, Search } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { useData } from '../lib/data-context';
@@ -103,7 +104,7 @@ function QualificationQuestions({ questions, onSelect }: { questions: any[], onS
   return (
     <div className="mb-4 mt-2 space-y-4">
       <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-        <ListChecks className="h-4 w-4 text-blue-600" />
+        <ListChecks className="h-4 w-4 text-zinc-500" />
         Quick Select Your Preferences
       </h4>
       {questions.map((q) => (
@@ -116,8 +117,8 @@ function QualificationQuestions({ questions, onSelect }: { questions: any[], onS
                 onClick={() => handleSelect(q.question_id, opt.value)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
                   selectedAnswers[q.question_id] === opt.value
-                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                    : 'bg-background hover:bg-blue-50 hover:text-blue-700 hover:border-blue-300 border-border'
+                    ? 'bg-zinc-900 text-zinc-50 border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100 shadow-sm'
+                    : 'bg-background hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 border-border'
                 }`}
               >
                 {opt.icon && <span>{opt.icon}</span>}
@@ -126,7 +127,7 @@ function QualificationQuestions({ questions, onSelect }: { questions: any[], onS
             ))}
           </div>
           {q.allow_custom && selectedAnswers[q.question_id] && !q.options.find((o: any) => o.value === selectedAnswers[q.question_id]) && (
-            <div className="text-sm text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+            <div className="text-sm text-zinc-800 dark:text-zinc-200 bg-zinc-100 dark:bg-zinc-900/50 rounded-lg px-3 py-2">
               Custom: {selectedAnswers[q.question_id]}
             </div>
           )}
@@ -142,7 +143,7 @@ function QualificationQuestions({ questions, onSelect }: { questions: any[], onS
                   }
                 }}
                 placeholder={q.custom_placeholder || "Type your own answer..."}
-                className="flex-1 text-sm border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="flex-1 text-sm border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:border-transparent"
               />
               <button
                 onClick={() => handleCustomSubmit(q.question_id)}
@@ -158,7 +159,7 @@ function QualificationQuestions({ questions, onSelect }: { questions: any[], onS
       {allAnswered && (
         <button
           onClick={handleSubmitAll}
-          className="w-full py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm"
+          className="w-full py-2.5 rounded-xl bg-zinc-900 text-zinc-50 dark:bg-zinc-100 dark:text-zinc-900 font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors shadow-sm"
         >
           Confirm Selections & Continue
         </button>
@@ -181,7 +182,7 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
   return (
     <div className="mb-4 mt-2">
       <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-        <Activity className="h-4 w-4 text-purple-600" /> 
+        <Activity className="h-4 w-4 text-zinc-500" /> 
         Suggested Options
       </h4>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -190,19 +191,26 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
           return (
             <div 
               key={iIdx} 
-              className={`bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col group ${isSelected ? 'ring-2 ring-purple-500 border-purple-500' : 'hover:border-purple-300'}`}
+              className={`bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all cursor-pointer flex flex-col group ${isSelected ? 'ring-2 ring-zinc-900 border-zinc-900 dark:ring-zinc-100 dark:border-zinc-100' : 'hover:border-zinc-300'}`}
               onClick={() => toggleSelect(item)}
             >
               <div className="h-32 bg-muted relative overflow-hidden">
                 <img src={isRenderableImage(item.image_url) ? item.image_url : PLACEHOLDER_IMG} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
                 {isSelected && (
-                  <div className="absolute top-2 right-2 bg-purple-600 text-white p-1 rounded-full shadow-md z-10">
+                  <div className="absolute top-2 right-2 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black p-1 rounded-full shadow-md z-10">
                     <CheckCircle className="h-4 w-4" />
                   </div>
                 )}
               </div>
               <div className="p-3 flex flex-col flex-1">
-                <h5 className="font-semibold text-sm line-clamp-1 mb-1 pr-6">{item.name}</h5>
+                <div className="flex items-center gap-2 mb-1">
+                  <h5 className="font-semibold text-sm line-clamp-1 flex-1">{item.name}</h5>
+                  {item.source && (
+                    <Badge variant={item.source === 'online' ? 'default' : 'secondary'} className={`text-[9px] px-1.5 py-0 shrink-0 ${item.source === 'online' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'}`}>
+                      {item.source === 'online' ? '🌐 Online' : '📦 Catalog'}
+                    </Badge>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{item.description}</p>
                 {item.badges && item.badges.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
@@ -218,7 +226,7 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
                   <Button 
                     variant={isSelected ? "secondary" : "outline"} 
                     size="sm" 
-                    className={isSelected ? "bg-purple-100 text-purple-700 hover:bg-purple-200" : "group-hover:bg-purple-50 group-hover:text-purple-700 group-hover:border-purple-200"}
+                    className={isSelected ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700" : "group-hover:bg-zinc-100 group-hover:text-zinc-900 group-hover:border-zinc-300 dark:group-hover:bg-zinc-800 dark:group-hover:text-zinc-50"}
                     onClick={(e) => { 
                       e.stopPropagation(); 
                       if (selectedItems.length === 0) {
@@ -238,9 +246,9 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
       </div>
 
       {selectedItems.length > 1 && (
-        <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900 rounded-xl overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4">
-           <div className="bg-purple-100 dark:bg-purple-900/40 p-3 border-b border-purple-200 dark:border-purple-900 flex justify-between items-center">
-             <h5 className="font-medium text-purple-900 dark:text-purple-100 flex items-center gap-2">
+        <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden mt-6 animate-in fade-in slide-in-from-bottom-4">
+           <div className="bg-zinc-100 dark:bg-zinc-800/40 p-3 border-b border-zinc-200 dark:border-zinc-800 flex justify-between items-center">
+             <h5 className="font-medium text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
                <TableIcon className="h-4 w-4" /> Side-by-Side Comparison
              </h5>
              <Button size="sm" onClick={() => onSelect(`I want to select these options for review: ${selectedItems.map(i => i.name).join(', ')}`)}>
@@ -250,10 +258,10 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
            <div className="p-0 overflow-x-auto">
              <table className="w-full text-sm">
                <thead>
-                 <tr className="bg-white/50 dark:bg-black/20 border-b border-purple-100 dark:border-purple-900/50">
+                 <tr className="bg-white/50 dark:bg-black/20 border-b border-zinc-250/50 dark:border-zinc-800/50">
                     <th className="p-3 text-left font-medium w-1/4">Feature</th>
                     {selectedItems.map((item, idx) => (
-                      <th key={idx} className="p-3 text-left font-medium w-1/3 border-l border-purple-100 dark:border-purple-900/50">
+                      <th key={idx} className="p-3 text-left font-medium w-1/3 border-l border-zinc-250/50 dark:border-zinc-800/50">
                         <div className="flex items-center gap-2">
                           <img src={isRenderableImage(item.image_url) ? item.image_url : `https://placehold.co/32x32/f3f4f6/6b7280?text=${encodeURIComponent(item.name.charAt(0))}`} className="w-8 h-8 rounded object-cover" onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/32x32/f3f4f6/6b7280?text=${encodeURIComponent(item.name.charAt(0))}`; }} />
                           <span className="line-clamp-1">{item.name}</span>
@@ -262,11 +270,11 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
                     ))}
                  </tr>
                </thead>
-               <tbody className="divide-y divide-purple-100 dark:divide-purple-900/50">
+               <tbody className="divide-y divide-zinc-200 dark:divide-zinc-850">
                  <tr className="bg-white/30 dark:bg-black/10 hover:bg-white/50">
                    <td className="p-3 font-medium text-muted-foreground">Price</td>
                    {selectedItems.map((item, idx) => (
-                     <td key={idx} className="p-3 border-l border-purple-100 dark:border-purple-900/50 font-medium">
+                     <td key={idx} className="p-3 border-l border-zinc-250/50 dark:border-zinc-800/50 font-medium">
                        {item.estimated_price}
                      </td>
                    ))}
@@ -274,7 +282,7 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
                  <tr className="bg-white/30 dark:bg-black/10 hover:bg-white/50">
                    <td className="p-3 font-medium text-muted-foreground">Description</td>
                    {selectedItems.map((item, idx) => (
-                     <td key={idx} className="p-3 border-l border-purple-100 dark:border-purple-900/50 text-xs text-muted-foreground">
+                     <td key={idx} className="p-3 border-l border-zinc-250/50 dark:border-zinc-800/50 text-xs text-muted-foreground">
                        {item.description}
                      </td>
                    ))}
@@ -310,10 +318,10 @@ function GuidedWizard({ questions, onComplete }: { questions: any[], onComplete:
 
   if (isComplete) {
     return (
-      <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 rounded-xl p-4 mt-4 flex items-center gap-3">
-        <CheckCircle className="h-5 w-5 text-purple-600" />
+      <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-4 flex items-center gap-3">
+        <CheckCircle className="h-5 w-5 text-green-600" />
         <div>
-          <h4 className="font-medium text-purple-900 dark:text-purple-100">Intake Form Completed</h4>
+          <h4 className="font-medium text-zinc-900 dark:text-zinc-100">Intake Form Completed</h4>
           <p className="text-xs text-muted-foreground">Information submitted successfully.</p>
         </div>
       </div>
@@ -322,17 +330,17 @@ function GuidedWizard({ questions, onComplete }: { questions: any[], onComplete:
 
   return (
     <div className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm mt-4">
-      <div className="bg-purple-50 dark:bg-purple-950/20 p-4 border-b border-purple-100 dark:border-purple-900/50">
-        <h4 className="font-semibold text-purple-900 dark:text-purple-100 flex items-center gap-2">
+      <div className="bg-zinc-50 dark:bg-zinc-900/20 p-4 border-b border-zinc-200 dark:border-zinc-800">
+        <h4 className="font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
           <FileText className="h-4 w-4" />
           Intake Form Wizard
         </h4>
         <div className="mt-2 text-xs text-muted-foreground">
           Step {currentStep + 1} of {questions.length}
         </div>
-        <div className="w-full bg-purple-200 dark:bg-purple-900/50 h-1 mt-2 rounded-full overflow-hidden">
+        <div className="w-full bg-zinc-250 dark:bg-zinc-800 h-1 mt-2 rounded-full overflow-hidden">
           <div 
-            className="bg-purple-600 h-full transition-all duration-300 ease-in-out" 
+            className="bg-zinc-900 dark:bg-zinc-100 h-full transition-all duration-300 ease-in-out" 
             style={{ width: `${((currentStep + 1) / questions.length) * 100}%` }}
           />
         </div>
@@ -348,7 +356,7 @@ function GuidedWizard({ questions, onComplete }: { questions: any[], onComplete:
               <Button
                 key={idx}
                 variant={currentValue === opt ? "default" : "outline"}
-                className={currentValue === opt ? "bg-purple-600 hover:bg-purple-700" : "hover:border-purple-300 hover:bg-purple-50 hover:text-purple-700"}
+                className={currentValue === opt ? "bg-zinc-900 text-zinc-50 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200" : "hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"}
                 onClick={() => setCurrentValue(opt)}
               >
                 {opt}
@@ -522,157 +530,169 @@ function ExpandableBotMessage({ msg, renderCard, isStreaming, onSelect }: { msg:
 
   const isInteractive = msg.type && msg.type !== 'text';
 
-  return (
-    <div className="bg-white dark:bg-card border shadow-sm rounded-2xl w-full overflow-hidden rounded-tl-sm">
-      <div 
-        className={`px-4 py-3 flex justify-between items-center transition-colors ${isInteractive ? 'cursor-pointer hover:bg-muted/30' : ''} ${isExpanded ? 'border-b bg-muted/10' : 'bg-muted/10'}`}
-        onClick={() => { if (isInteractive) setIsExpanded(!isExpanded); }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-            <Bot className="h-4 w-4" />
-          </div>
-          <span className="font-medium text-sm text-foreground">
-            {getTitle(msg.type)}
-          </span>
-        </div>
-        {isInteractive && (
-          <button className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted">
-            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </button>
-        )}
-      </div>
-      
-      <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
-        <div className="overflow-hidden">
-          <div className="p-4">
-            {msg.tool_calls && msg.tool_calls.length > 0 && (
-              <div className="mb-4 space-y-2">
-                {msg.tool_calls.map((tool, idx) => {
-                  if (tool.name === 'suggest_procurement_items' && tool.result) {
-                    try {
-                      const data = JSON.parse(tool.result);
-                      if (data.items && data.items.length > 0) {
-                        return <SuggestedItemsGrid key={idx} items={data.items} onSelect={onSelect} />;
-                      }
-                    } catch (e) {}
+  const renderInnerContent = () => {
+    return (
+      <>
+        {msg.tool_calls && msg.tool_calls.length > 0 && (
+          <div className="mb-3 space-y-2">
+            {msg.tool_calls.map((tool, idx) => {
+              if (tool.name === 'suggest_procurement_items' && tool.result) {
+                try {
+                  const data = JSON.parse(tool.result);
+                  if (data.items && data.items.length > 0) {
+                    return <SuggestedItemsGrid key={idx} items={data.items} onSelect={onSelect} />;
                   }
+                } catch (e) {}
+              }
 
-                  if (tool.name === 'ask_form_questions' && tool.arguments?.questions) {
+              if (tool.name === 'ask_form_questions' && tool.arguments?.questions) {
+                return (
+                  <GuidedWizard 
+                    key={idx} 
+                    questions={tool.arguments.questions} 
+                    onComplete={(data) => {
+                      onSelect("Form submitted: \n" + Object.entries(data).map(([k, v]) => `- ${k}: ${v}`).join("\n"));
+                    }} 
+                  />
+                );
+              }
+
+              if (tool.name === 'search_product_images' && tool.result) {
+                try {
+                  const data = JSON.parse(tool.result);
+                  const renderableImages = (data.images || []).filter((img: any) => isRenderableImage(img.url));
+                  if (renderableImages.length > 0) {
                     return (
-                      <GuidedWizard 
-                        key={idx} 
-                        questions={tool.arguments.questions} 
-                        onComplete={(data) => {
-                          onSelect("Form submitted: \n" + Object.entries(data).map(([k, v]) => `- ${k}: ${v}`).join("\n"));
-                        }} 
-                      />
-                    );
-                  }
-
-                  if (tool.name === 'search_product_images' && tool.result) {
-                    try {
-                      const data = JSON.parse(tool.result);
-                      const renderableImages = (data.images || []).filter((img: any) => isRenderableImage(img.url));
-                      if (renderableImages.length > 0) {
-                        return (
-                          <div key={idx} className="mb-4 mt-2">
-                            <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                              <Activity className="h-4 w-4 text-purple-600" />
-                              Suggested Options
-                            </h4>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {renderableImages.map((img: any, iIdx: number) => (
-                                <div key={iIdx} className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex flex-col group" onClick={() => onSelect(`I want to select ${img.title}`)}>
-                                  <div className="h-32 bg-muted relative overflow-hidden">
-                                    <img src={img.url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
-                                  </div>
-                                  <div className="p-3 flex flex-col flex-1">
-                                    <h5 className="font-semibold text-sm line-clamp-2 mb-3">{img.title}</h5>
-                                    <div className="mt-auto">
-                                      <Button variant="outline" size="sm" className="w-full group-hover:bg-purple-50 group-hover:text-purple-700 group-hover:border-purple-200" onClick={(e) => { e.stopPropagation(); onSelect(`I want to select ${img.title}`); }}>
-                                        Select Option
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      }
-                    } catch (e) {}
-                  }
-
-                  if (tool.name === 'present_qualification_questions') {
-                    // Try result first, fall back to arguments
-                    let questions = null;
-                    try {
-                      if (tool.result) {
-                        const qualData = JSON.parse(tool.result);
-                        if (qualData.questions) questions = qualData.questions;
-                      }
-                    } catch (e) {}
-                    if (!questions && tool.arguments?.questions) {
-                      questions = tool.arguments.questions;
-                    }
-                    if (questions && questions.length > 0) {
-                      return <QualificationQuestions key={idx} questions={questions} onSelect={onSelect} />;
-                    }
-                  }
-
-                  if (tool.name === 'suggest_vendors' && tool.arguments?.vendors) {
-                     return (
-                        <div key={idx} className="mb-4 w-full space-y-4">
-                          <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                            <Activity className="h-4 w-4 text-purple-600" /> 
-                            Suggested Vendors
-                          </h4>
-                          {tool.arguments.vendors.map((vendor: any, vIdx: number) => (
-                            <div key={vIdx} className="bg-white dark:bg-card border shadow-sm rounded-lg p-5 transition-all hover:border-purple-300">
-                              <div className="flex justify-between items-start mb-3">
-                                <div className="font-semibold text-lg">{vendor.name}</div>
-                                <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
-                                  {vendor.category}
-                                </span>
+                      <div key={idx} className="mb-4 mt-2">
+                        <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                          <Activity className="h-4 w-4 text-zinc-550" />
+                          Suggested Options
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {renderableImages.map((img: any, iIdx: number) => (
+                            <div key={iIdx} className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-zinc-300 dark:hover:border-zinc-700 transition-all cursor-pointer flex flex-col group" onClick={() => onSelect(`I want to select ${img.title}`)}>
+                              <div className="h-32 bg-muted relative overflow-hidden">
+                                <img src={img.url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
                               </div>
-                              <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{vendor.description}</p>
-                              <Button 
-                                variant="outline" 
-                                className="w-full border-purple-200 text-purple-700 hover:bg-purple-50"
-                                onClick={() => onSelect(`I'd like to proceed with ${vendor.name}.`)}
-                              >
-                                Select {vendor.name}
-                              </Button>
+                              <div className="p-3 flex flex-col flex-1">
+                                <h5 className="font-semibold text-sm line-clamp-2 mb-3">{img.title}</h5>
+                                <div className="mt-auto">
+                                  <Button variant="outline" size="sm" className="w-full group-hover:bg-zinc-100 group-hover:text-zinc-900 group-hover:border-zinc-300 dark:group-hover:bg-zinc-800 dark:group-hover:text-zinc-100" onClick={(e) => { e.stopPropagation(); onSelect(`I want to select ${img.title}`); }}>
+                                    Select Option
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
-                     );
+                      </div>
+                    );
                   }
+                } catch (e) {}
+              }
 
-                  return <ToolCallBlock key={idx} tool={tool} />;
-                })}
-              </div>
-            )}
-            {isStreaming && !msg.content && (!msg.tool_calls || msg.tool_calls.length === 0) && (
-              <div className="flex items-center gap-2 text-muted-foreground min-h-[1.25rem]">
-                <div className="w-2 h-2 bg-purple-500/50 rounded-full animate-bounce" />
-                <div className="w-2 h-2 bg-purple-500/50 rounded-full animate-bounce [animation-delay:-.3s]" />
-                <div className="w-2 h-2 bg-purple-500/50 rounded-full animate-bounce [animation-delay:-.5s]" />
-              </div>
-            )}
-            {msg.content && (
-              <div className={`prose prose-sm dark:prose-invert max-w-none ${msg.type !== 'text' ? 'mb-4' : ''}`}>
-                <ReactMarkdown>{msg.content + (isStreaming ? ' ▋' : '')}</ReactMarkdown>
-              </div>
-            )}
-            {msg.type !== 'text' && (
-              <div className="w-full">
-                {renderCard(msg)}
-              </div>
-            )}
+              if (tool.name === 'present_qualification_questions') {
+                let questions = null;
+                try {
+                  if (tool.result) {
+                    const qualData = JSON.parse(tool.result);
+                    if (qualData.questions) questions = qualData.questions;
+                  }
+                } catch (e) {}
+                if (!questions && tool.arguments?.questions) {
+                  questions = tool.arguments.questions;
+                }
+                if (questions && questions.length > 0) {
+                  return <QualificationQuestions key={idx} questions={questions} onSelect={onSelect} />;
+                }
+              }
+
+              if (tool.name === 'suggest_vendors' && tool.arguments?.vendors) {
+                 return (
+                    <div key={idx} className="mb-4 w-full space-y-4">
+                      <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                        <Activity className="h-4 w-4 text-zinc-500" /> 
+                        Suggested Vendors
+                      </h4>
+                      {tool.arguments.vendors.map((vendor: any, vIdx: number) => (
+                        <div key={vIdx} className="bg-white dark:bg-card border shadow-sm rounded-lg p-5 transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="font-semibold text-lg">{vendor.name}</div>
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-muted text-muted-foreground">
+                              {vendor.category}
+                            </span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mb-5 leading-relaxed">{vendor.description}</p>
+                          <Button 
+                            variant="outline" 
+                            className="w-full border-zinc-200 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-850"
+                            onClick={() => onSelect(`I'd like to proceed with ${vendor.name}.`)}
+                          >
+                            Select {vendor.name}
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                 );
+              }
+
+              return <ToolCallBlock key={idx} tool={tool} />;
+            })}
           </div>
-        </div>
+        )}
+        {isStreaming && !msg.content && (!msg.tool_calls || msg.tool_calls.length === 0) && (
+          <div className="flex items-center gap-1.5 text-muted-foreground py-1 select-none">
+            <div className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" />
+            <div className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce [animation-delay:-.3s]" />
+            <div className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce [animation-delay:-.5s]" />
+          </div>
+        )}
+        {msg.content && (
+          <div className={`prose prose-sm dark:prose-invert max-w-none text-zinc-900 dark:text-zinc-100 leading-relaxed text-sm ${msg.type !== 'text' ? 'mb-4' : ''}`}>
+            <ReactMarkdown>{msg.content + (isStreaming ? ' ▋' : '')}</ReactMarkdown>
+          </div>
+        )}
+        {msg.type !== 'text' && (
+          <div className="w-full">
+            {renderCard(msg)}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div className="w-full flex gap-3.5 text-left items-start">
+      <div className="w-7 h-7 rounded-lg bg-zinc-100 dark:bg-zinc-800/80 text-zinc-700 dark:text-zinc-300 flex items-center justify-center shrink-0 mt-0.5 shadow-none border border-zinc-200/40 dark:border-zinc-700/30">
+        <Bot className="h-4 w-4" />
+      </div>
+      <div className="flex-1 min-w-0">
+        {isInteractive ? (
+          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-xs rounded-2xl w-full overflow-hidden rounded-tl-sm">
+            <div 
+              className={`px-4 py-3 flex justify-between items-center transition-colors cursor-pointer hover:bg-zinc-50 dark:hover:bg-zinc-900 ${isExpanded ? 'border-b bg-muted/10' : 'bg-muted/10'}`}
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <span className="font-semibold text-xs text-foreground tracking-wide uppercase">
+                {getTitle(msg.type)}
+              </span>
+              <button className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-full hover:bg-muted">
+                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+            </div>
+            <div className={`grid transition-all duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+              <div className="overflow-hidden">
+                <div className="p-4">
+                  {renderInnerContent()}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="pt-0.5">
+            {renderInnerContent()}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -809,6 +829,11 @@ export function AgentChat() {
   const [kbContext, setKbContext] = useState('');
   const [useContext, setUseContext] = useState(() => localStorage.getItem('kb-context-enabled') !== 'false');
   const [isRecording, setIsRecording] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('chat-model-qwen') || 'qwen3.5-plus');
+
+  useEffect(() => {
+    localStorage.setItem('chat-model-qwen', selectedModel);
+  }, [selectedModel]);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
 
@@ -899,7 +924,14 @@ export function AgentChat() {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: mediaRecorder.mimeType });
         const format = mediaRecorder.mimeType.includes('webm') ? 'webm' : 'mp3';
-        
+
+        // Check file size (max 1MB to avoid timeout)
+        if (audioBlob.size > 1024 * 1024) {
+          toast.error("Recording too long. Keep it under 30 seconds.", { id: 'transcribe' });
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
@@ -996,6 +1028,7 @@ export function AgentChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: apiMessages,
+          model: selectedModel,
           context: {
             intakes,
             procurementCatalog,
@@ -1254,12 +1287,12 @@ export function AgentChat() {
         const pending = (msg as any).pendingIntake;
         if (!pending) return null;
         return (
-          <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50 rounded-xl p-4 mt-2">
+          <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-5 w-5 text-blue-600" />
-              <h4 className="font-semibold text-blue-900 dark:text-blue-100">Confirm Purchase Requisition</h4>
+              <FileText className="h-5 w-5 text-zinc-500" />
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Confirm Purchase Requisition</h4>
             </div>
-            <p className="text-sm text-blue-800 dark:text-blue-200 mb-3">Please review the details before creating this requisition:</p>
+            <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">Please review the details before creating this requisition:</p>
             <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Title:</span>
@@ -1283,7 +1316,7 @@ export function AgentChat() {
             <div className="flex gap-2">
               <Button
                 size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900"
                 onClick={async () => {
                   try {
                     const { addDoc, collection: fbCollection } = await import('firebase/firestore');
@@ -1305,6 +1338,8 @@ export function AgentChat() {
                     };
                     const docRef = await addDoc(fbCollection(db, 'purchaseRequisitions'), newReq);
                     toast.success(`Requisition ${docRef.id} created successfully`);
+                    // Clear the confirmation card by removing pendingIntake
+                    setMessages(prev => prev.map(m => m.type === 'intake-confirmation' ? { ...m, type: 'text', pendingIntake: undefined } : m));
                     handleSend(`Requisition ${docRef.id} created. What would you like to do next?`);
                   } catch (e) {
                     console.error("Error creating requisition:", e);
@@ -1317,7 +1352,7 @@ export function AgentChat() {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-red-200 text-red-700 hover:bg-red-50"
+                className="border-zinc-200 text-muted-foreground hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
                 onClick={() => handleSend("I changed my mind. Cancel this requisition.")}
               >
                 <AlertCircle className="h-4 w-4 mr-1" /> Cancel
@@ -1330,12 +1365,12 @@ export function AgentChat() {
         const pending = (msg as any).pendingSupplier;
         if (!pending) return null;
         return (
-          <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-xl p-4 mt-2">
+          <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle className="h-5 w-5 text-green-600" />
-              <h4 className="font-semibold text-green-900 dark:text-green-100">Confirm New Supplier</h4>
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Confirm New Supplier</h4>
             </div>
-            <p className="text-sm text-green-800 dark:text-green-200 mb-3">Please review the supplier details before adding:</p>
+            <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">Please review the supplier details before adding:</p>
             <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-sm space-y-2">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Name:</span>
@@ -1359,7 +1394,7 @@ export function AgentChat() {
             <div className="flex gap-2">
               <Button
                 size="sm"
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900"
                 onClick={async () => {
                   try {
                     const { addDoc, collection: fbCollection } = await import('firebase/firestore');
@@ -1373,6 +1408,7 @@ export function AgentChat() {
                     };
                     const docRef = await addDoc(fbCollection(db, 'suppliers'), newSupplier);
                     toast.success(`Supplier "${pending.name}" added successfully`);
+                    setMessages(prev => prev.map(m => m.type === 'supplier-confirmation' ? { ...m, type: 'text', pendingSupplier: undefined } : m));
                     handleSend(`Supplier "${pending.name}" has been added to the directory with ID ${docRef.id}. What would you like to do next?`);
                   } catch (e) {
                     console.error("Error creating supplier:", e);
@@ -1385,7 +1421,7 @@ export function AgentChat() {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-red-200 text-red-700 hover:bg-red-50"
+                className="border-zinc-200 text-muted-foreground hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800"
                 onClick={() => handleSend("I changed my mind. Cancel adding this supplier.")}
               >
                 <AlertCircle className="h-4 w-4 mr-1" /> Cancel
@@ -1398,10 +1434,10 @@ export function AgentChat() {
         const rfq = (msg as any).pendingRfq;
         if (!rfq) return null;
         return (
-          <div className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 rounded-xl p-4 mt-2">
+          <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-5 w-5 text-indigo-600" />
-              <h4 className="font-semibold text-indigo-900 dark:text-indigo-100">Confirm RFQ Creation</h4>
+              <FileText className="h-5 w-5 text-zinc-500" />
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Confirm RFQ Creation</h4>
             </div>
             <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-sm space-y-2">
               <div className="flex justify-between"><span className="text-muted-foreground">Title:</span><span className="font-medium">{rfq.title}</span></div>
@@ -1410,7 +1446,7 @@ export function AgentChat() {
               {rfq.due_date && <div className="flex justify-between"><span className="text-muted-foreground">Due:</span><span className="font-medium">{rfq.due_date}</span></div>}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
+              <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900" onClick={async () => {
                 try {
                   const fb = await import('firebase/firestore');
                   const docRef = await fb.addDoc(fb.collection(db, 'rfqs'), {
@@ -1421,10 +1457,11 @@ export function AgentChat() {
                     auditTrail: [{ action: 'created', actorId: user?.uid || '', timestamp: new Date().toISOString() }]
                   });
                   toast.success(`RFQ ${docRef.id} created`);
+                  setMessages(prev => prev.map(m => m.type === 'rfq-confirmation' ? { ...m, type: 'text', pendingRfq: undefined } : m));
                   handleSend(`RFQ "${rfq.title}" created with ID ${docRef.id}. What next?`);
                 } catch (e) { toast.error("Failed to create RFQ"); }
               }}><CheckCircle className="h-4 w-4 mr-1" /> Confirm</Button>
-              <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => handleSend("Cancel this RFQ.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
+              <Button size="sm" variant="outline" className="border-zinc-200 text-muted-foreground hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800" onClick={() => handleSend("Cancel this RFQ.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
             </div>
           </div>
         );
@@ -1433,10 +1470,10 @@ export function AgentChat() {
         const bid = (msg as any).pendingBid;
         if (!bid) return null;
         return (
-          <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl p-4 mt-2">
+          <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
             <div className="flex items-center gap-2 mb-3">
               <CheckCircle className="h-5 w-5 text-amber-600" />
-              <h4 className="font-semibold text-amber-900 dark:text-amber-100">Confirm Bid Selection</h4>
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Confirm Bid Selection</h4>
             </div>
             <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-sm space-y-2">
               <div className="flex justify-between"><span className="text-muted-foreground">Supplier:</span><span className="font-medium">{bid.supplier_id}</span></div>
@@ -1444,7 +1481,7 @@ export function AgentChat() {
               {bid.reasoning && <div className="pt-2 border-t"><span className="text-muted-foreground text-xs">Reasoning:</span><p className="text-xs mt-1">{bid.reasoning}</p></div>}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
+              <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900" onClick={async () => {
                 try {
                   const fb = await import('firebase/firestore');
                   await fb.addDoc(fb.collection(db, 'bids'), {
@@ -1454,10 +1491,11 @@ export function AgentChat() {
                     createdAt: new Date().toISOString()
                   });
                   toast.success("Bid selected and recorded");
+                  setMessages(prev => prev.map(m => m.type === 'bid-confirmation' ? { ...m, type: 'text', pendingBid: undefined } : m));
                   handleSend(`Bid from ${bid.supplier_id} for ${bid.amount} confirmed. What next?`);
                 } catch (e) { toast.error("Failed to record bid"); }
               }}><CheckCircle className="h-4 w-4 mr-1" /> Confirm</Button>
-              <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => handleSend("Cancel this bid selection.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
+              <Button size="sm" variant="outline" className="border-zinc-200 text-muted-foreground hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800" onClick={() => handleSend("Cancel this bid selection.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
             </div>
           </div>
         );
@@ -1466,10 +1504,10 @@ export function AgentChat() {
         const po = (msg as any).pendingPo;
         if (!po) return null;
         return (
-          <div className="bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50 rounded-xl p-4 mt-2">
+          <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
             <div className="flex items-center gap-2 mb-3">
-              <FileText className="h-5 w-5 text-purple-600" />
-              <h4 className="font-semibold text-purple-900 dark:text-purple-100">Confirm Purchase Order</h4>
+              <FileText className="h-5 w-5 text-zinc-500" />
+              <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Confirm Purchase Order</h4>
             </div>
             <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-sm space-y-2">
               <div className="flex justify-between"><span className="text-muted-foreground">Supplier:</span><span className="font-medium">{po.supplier_id}</span></div>
@@ -1484,7 +1522,7 @@ export function AgentChat() {
               )}
             </div>
             <div className="flex gap-2">
-              <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
+              <Button size="sm" className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900" onClick={async () => {
                 try {
                   const fb = await import('firebase/firestore');
                   const poId = `PO-${Date.now()}`;
@@ -1494,10 +1532,11 @@ export function AgentChat() {
                     createdBy: user?.uid || '', createdAt: new Date().toISOString()
                   });
                   toast.success(`PO ${poId} created`);
+                  setMessages(prev => prev.map(m => m.type === 'po-confirmation' ? { ...m, type: 'text', pendingPo: undefined } : m));
                   handleSend(`Purchase Order ${poId} created for ${po.total_amount}. What next?`);
                 } catch (e) { toast.error("Failed to create PO"); }
               }}><CheckCircle className="h-4 w-4 mr-1" /> Confirm</Button>
-              <Button size="sm" variant="outline" className="border-red-200 text-red-700 hover:bg-red-50" onClick={() => handleSend("Cancel this purchase order.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
+              <Button size="sm" variant="outline" className="border-zinc-200 text-muted-foreground hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800" onClick={() => handleSend("Cancel this purchase order.")}><AlertCircle className="h-4 w-4 mr-1" /> Cancel</Button>
             </div>
           </div>
         );
@@ -1509,15 +1548,15 @@ export function AgentChat() {
           const details = approvalTool.arguments?.details || {};
           const riskColors: Record<string, string> = { low: 'bg-green-100 text-green-800', medium: 'bg-yellow-100 text-yellow-800', high: 'bg-red-100 text-red-800' };
           return (
-            <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 rounded-xl p-4 mt-2">
+            <div className="bg-zinc-50 dark:bg-zinc-900/20 border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 mt-2">
               <div className="flex items-center gap-2 mb-3">
                 <AlertCircle className="h-5 w-5 text-amber-600" />
-                <h4 className="font-semibold text-amber-900 dark:text-amber-100">Human Approval Required</h4>
+                <h4 className="font-semibold text-zinc-900 dark:text-zinc-100">Human Approval Required</h4>
                 <Badge className={riskColors[approvalTool.arguments?.risk_level || 'medium']}>
                   {approvalTool.arguments?.risk_level || 'medium'} risk
                 </Badge>
               </div>
-              <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">{approvalTool.arguments?.action}</p>
+              <p className="text-sm text-zinc-700 dark:text-zinc-300 mb-3">{approvalTool.arguments?.action}</p>
               {Object.keys(details).length > 0 && (
                 <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3 mb-4 text-xs space-y-1">
                   {Object.entries(details).map(([key, val]) => (
@@ -1531,7 +1570,7 @@ export function AgentChat() {
               <div className="flex gap-2">
                 <Button 
                   size="sm" 
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className="bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-zinc-50 dark:text-zinc-900"
                   onClick={() => handleSend("I approve this action. Please proceed.")}
                 >
                   <CheckCircle className="h-4 w-4 mr-1" /> Approve
@@ -1554,32 +1593,168 @@ export function AgentChat() {
     }
   };
 
+  const renderInputForm = () => {
+    return (
+      <form
+        className="flex flex-col w-full gap-2 relative"
+        onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+      >
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileUpload}
+          className="hidden"
+          accept=".pdf,.txt,.md,.docx,.xlsx"
+        />
+        <div className="flex flex-col border border-zinc-200 dark:border-zinc-800 rounded-3xl bg-zinc-50/50 dark:bg-zinc-950/20 px-4 py-3 focus-within:ring-1 focus-within:ring-zinc-400 dark:focus-within:ring-zinc-600 focus-within:border-zinc-400 dark:focus-within:border-zinc-600 transition-all text-left">
+          <textarea
+            value={input}
+            onChange={e => {
+              setInput(e.target.value);
+              e.target.style.height = 'auto';
+              e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+            placeholder="Message Procurely..."
+            rows={1}
+            className="w-full resize-none bg-transparent border-0 outline-none text-sm min-h-[28px] max-h-[120px] py-1 placeholder:text-muted-foreground text-foreground"
+            disabled={isLoading}
+            style={{ height: 'auto' }}
+          />
+          <div className="flex items-center justify-between mt-2 pt-2 border-t border-zinc-150/80 dark:border-zinc-800/40">
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading || isLoading}
+              >
+                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger render={
+                  <Button 
+                    type="button"
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-8 rounded-full border border-zinc-200 dark:border-zinc-800 text-xs px-2.5 font-normal text-muted-foreground flex items-center gap-1.5 hover:bg-zinc-200/40 dark:hover:bg-zinc-805 bg-background shadow-none"
+                  />
+                }>
+                  <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                  <span className="font-medium">{selectedModel}</span>
+                  <ChevronDown className="h-3 w-3 opacity-60" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-48 bg-popover text-popover-foreground border border-zinc-200 dark:border-zinc-800 shadow-md">
+                  <DropdownMenuItem onClick={() => setSelectedModel('qwen3.7-plus')} className="cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-xs text-foreground">qwen3.7-plus</span>
+                      <span className="text-[10px] text-muted-foreground">Flagship High-Performance</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedModel('qwen3.5-plus')} className="cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-xs text-foreground">qwen3.5-plus</span>
+                      <span className="text-[10px] text-muted-foreground">Flagship Balanced</span>
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setSelectedModel('qwen3.6-flash')} className="cursor-pointer">
+                    <div className="flex flex-col">
+                      <span className="font-semibold text-xs text-foreground">qwen3.6-flash</span>
+                      <span className="text-[10px] text-muted-foreground">Fast & Cost-Efficient</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                onClick={toggleRecording}
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 rounded-full ${isRecording ? 'text-red-500 hover:text-red-650 bg-red-100 dark:bg-red-950/30 hover:bg-red-200 dark:hover:bg-red-900 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-zinc-200/50 dark:hover:bg-zinc-800/50'}`}
+              >
+                {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                size="icon"
+                className="h-8 w-8 rounded-full bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 dark:text-zinc-950 text-white shadow-sm disabled:opacity-30 flex items-center justify-center cursor-pointer"
+              >
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              </Button>
+            </div>
+          </div>
+        </div>
+      </form>
+    );
+  };
+
+  const renderSuggestedPrompts = () => {
+    return (
+      <div className="flex flex-wrap justify-center gap-2 w-full max-w-2xl mx-auto mt-2">
+        {SUGGESTED_PROMPTS.map((prompt, i) => (
+          <button
+            key={i}
+            onClick={() => handleSend(prompt.text)}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full border border-zinc-200 dark:border-zinc-800 text-xs text-muted-foreground hover:bg-zinc-100/50 dark:hover:bg-zinc-850 hover:text-foreground transition-all duration-200 shadow-none cursor-pointer"
+          >
+            <span className="text-sm">{prompt.icon}</span>
+            <span className="font-medium">{prompt.text.length > 35 ? prompt.text.substring(0, 35) + '...' : prompt.text}</span>
+          </button>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className="p-0 md:p-4 flex h-[calc(100vh-4rem)] md:h-[calc(100vh-2rem)] gap-0">
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-200 overflow-hidden border-r bg-background/50 flex flex-col shrink-0 hidden md:flex`}>
-        <div className="p-3 border-b flex items-center justify-between">
-          <span className="text-sm font-medium text-muted-foreground">Conversations</span>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={createNewChat}>
-            <Plus className="h-4 w-4" />
+      <div className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-200 overflow-hidden border-r bg-zinc-50/60 dark:bg-zinc-950/20 flex flex-col shrink-0 hidden md:flex`}>
+        <div className="p-4 flex items-center justify-between border-b mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
+              <Bot className="h-3.5 w-3.5 text-white dark:text-zinc-900" />
+            </div>
+            <span className="font-semibold text-sm text-zinc-900 dark:text-zinc-50">procurely</span>
+          </div>
+        </div>
+        <div className="px-3 pb-3">
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-2 rounded-xl text-xs font-medium border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 bg-background text-foreground h-9 shadow-none"
+            onClick={createNewChat}
+          >
+            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+            New Thread
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 overflow-y-auto px-2 space-y-0.5">
           {chats.map(chat => (
             <div
               key={chat.id}
               onClick={() => switchChat(chat.id)}
               className={`group flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
                 activeChatId === chat.id
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:bg-muted/50 hover:text-foreground'
+                  ? 'bg-zinc-100 dark:bg-zinc-800 text-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-zinc-100/60 dark:hover:bg-zinc-800/40 hover:text-foreground'
               }`}
             >
-              <MessageSquare className="h-4 w-4 shrink-0" />
-              <span className="truncate flex-1">{chat.title}</span>
+              <MessageSquare className="h-3.5 w-3.5 shrink-0 opacity-70" />
+              <span className="truncate flex-1 text-xs">{chat.title}</span>
               <button
                 onClick={(e) => { e.stopPropagation(); deleteChat(chat.id); }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-destructive"
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 hover:text-destructive text-muted-foreground"
               >
                 <Trash2 className="h-3 w-3" />
               </button>
@@ -1590,72 +1765,68 @@ export function AgentChat() {
 
       {/* Main chat area */}
       <div className="flex-1 flex flex-col min-h-0">
-        <Card className="flex-1 flex flex-col min-h-0 bg-background/50 border-0 md:border shadow-none md:shadow-sm rounded-none md:rounded-lg">
-          <CardHeader className="border-b py-3 px-4 bg-card">
-            <CardTitle className="flex items-center gap-2.5 text-base font-medium">
+        <Card className="flex-1 flex flex-col min-h-0 bg-background border-0 shadow-none rounded-none">
+          <CardHeader className="border-b py-3 px-4 bg-background">
+            <CardTitle className="flex items-center gap-3 text-base font-medium">
+              {/* Back Button */}
+              <a 
+                href="/app" 
+                className="h-8 w-8 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+                title="Back to Dashboard"
+              >
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+              </a>
+
+              {/* Toggle Sidebar Button */}
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-7 w-7 -ml-1"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg transition-colors shrink-0"
                 onClick={() => setSidebarOpen(!sidebarOpen)}
+                title="Toggle Sidebar"
               >
                 {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeft className="h-4 w-4" />}
               </Button>
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
-                <Bot className="h-4 w-4 text-white" />
-              </div>
-              Procurely
+
+              <div className="w-px h-4 bg-zinc-200 dark:bg-zinc-800 mx-1 shrink-0" />
+
+              {/* Chat Title */}
+              <span className="text-sm font-medium truncate text-foreground">
+                {activeChatId ? (chats.find(c => c.id === activeChatId)?.title || "Chat") : "New Chat"}
+              </span>
             {useContext && (
-              <Badge variant="secondary" className="text-[10px] bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 border-violet-200 dark:border-violet-800 ml-1">
+              <Badge variant="secondary" className="text-[10px] bg-zinc-100 text-zinc-700 dark:bg-zinc-800/40 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800 ml-1">
                 KB Active
               </Badge>
             )}
           </CardTitle>
         </CardHeader>
-        <CardContent className="flex-1 overflow-hidden p-0 relative bg-muted/20">
-          <div className="h-full overflow-y-auto p-4 md:p-6" ref={scrollRef}>
-            {/* Empty state: suggested prompts */}
-            {messages.length === 0 && !isLoading && (
-              <div className="flex flex-col items-center justify-center h-full gap-6 py-12">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <Bot className="h-7 w-7 text-white" />
+        <CardContent className="flex-1 overflow-hidden p-0 relative bg-background">
+          <div className="h-full overflow-y-auto" ref={scrollRef}>
+            {/* Empty state: show when only welcome message exists */}
+            {messages.length <= 1 && !isLoading && messages[0]?.content === WELCOME_MSG.content && (
+              <div className="flex flex-col items-center justify-center min-h-[85%] h-full max-w-3xl mx-auto px-4 gap-6 select-none">
+                <h2 className="text-3xl font-semibold text-foreground tracking-tight text-center">How can I help you today?</h2>
+                <div className="w-full">
+                  {renderInputForm()}
                 </div>
-                <div className="text-center">
-                  <h3 className="text-lg font-semibold mb-1">How can I help with procurement?</h3>
-                  <p className="text-sm text-muted-foreground">I can source suppliers, negotiate prices, and manage your procure-to-pay workflow.</p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg w-full">
-                  {SUGGESTED_PROMPTS.map((prompt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => handleSend(prompt.text)}
-                      className="flex items-start gap-3 p-3.5 rounded-xl border bg-card hover:bg-muted/50 hover:border-violet-300 dark:hover:border-violet-700 transition-all text-left group"
-                    >
-                      <span className="text-lg mt-0.5">{prompt.icon}</span>
-                      <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">{prompt.text}</span>
-                    </button>
-                  ))}
-                </div>
+                {renderSuggestedPrompts()}
               </div>
             )}
 
             {/* Messages */}
-            <div className="flex flex-col gap-6 pb-4">
+            {(messages.length > 1 || messages[0]?.content !== WELCOME_MSG.content) && (
+            <div className="flex flex-col gap-6 p-4 md:p-6 pb-4 max-w-3xl mx-auto w-full">
               {messages.map((msg, idx) => {
                 const isStreaming = isLoading && idx === messages.length - 1;
                 const isLastModel = msg.role === 'model' && idx === messages.length - 1;
                 return (
-                  <div key={idx} className={`flex gap-3 max-w-[95%] md:max-w-[85%] group ${msg.role === 'user' ? 'self-end flex-row-reverse' : 'self-start w-full'}`}>
-                    {msg.role === 'user' && (
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 mt-1 bg-primary text-primary-foreground hidden md:flex">
-                        <User className="h-4 w-4" />
-                      </div>
-                    )}
+                  <div key={idx} className={`flex gap-3 max-w-[95%] md:max-w-[85%] group ${msg.role === 'user' ? 'self-end' : 'self-start w-full'}`}>
                     <div className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'} w-full`}>
                       {msg.role === 'user' ? (
                         <div className="relative">
-                          <div className="p-3.5 rounded-2xl bg-primary text-primary-foreground rounded-tr-sm shadow-sm">
-                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-headings:my-0">
+                          <div className="px-4 py-2.5 rounded-2xl bg-zinc-100 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 border border-zinc-250/20 dark:border-zinc-700/35 rounded-tr-sm shadow-none">
+                            <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-0 prose-headings:my-0 text-zinc-900 dark:text-zinc-100">
                               <ReactMarkdown>{msg.content}</ReactMarkdown>
                             </div>
                           </div>
@@ -1699,15 +1870,15 @@ export function AgentChat() {
               )}
               {isLoading && messages[messages.length - 1]?.role !== 'model' && (
                 <div className="flex gap-3 max-w-[95%] md:max-w-[85%] self-start w-full">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 mt-1 shadow-sm">
-                    <Bot className="h-3.5 w-3.5 text-white" />
+                  <div className="w-7 h-7 rounded-lg bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center shrink-0 mt-1 shadow-sm">
+                    <Bot className="h-3.5 w-3.5 text-zinc-50 dark:text-zinc-900" />
                   </div>
                   <div className="bg-card border rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <div className="flex gap-1">
-                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce" />
-                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:-.3s]" />
-                        <span className="w-1.5 h-1.5 bg-violet-400 rounded-full animate-bounce [animation-delay:-.5s]" />
+                        <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce" />
+                        <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce [animation-delay:-.3s]" />
+                        <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-500 rounded-full animate-bounce [animation-delay:-.5s]" />
                       </div>
                       <span className="text-xs text-muted-foreground">Thinking...</span>
                     </div>
@@ -1715,73 +1886,17 @@ export function AgentChat() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </CardContent>
-        <CardFooter className="border-t p-3 bg-white dark:bg-card">
-          <form
-            className="flex flex-col w-full gap-2 relative"
-            onSubmit={(e) => { e.preventDefault(); handleSend(); }}
-          >
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileUpload}
-              className="hidden"
-              accept=".pdf,.txt,.md,.docx,.xlsx"
-            />
-            <div className="flex items-end gap-2 border rounded-2xl bg-muted/30 px-3 py-2 focus-within:ring-2 focus-within:ring-violet-500/50 focus-within:border-violet-500/50 transition-all">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="shrink-0 h-8 w-8 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground mb-0.5"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || isLoading}
-              >
-                {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              </Button>
-              <textarea
-                value={input}
-                onChange={e => {
-                  setInput(e.target.value);
-                  e.target.style.height = 'auto';
-                  e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
-                }}
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-                placeholder="Message Procurely..."
-                rows={1}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[24px] max-h-[120px] py-1 placeholder:text-muted-foreground"
-                disabled={isLoading}
-                style={{ height: 'auto' }}
-              />
-              <div className="flex items-center gap-1 mb-0.5">
-                <Button
-                  type="button"
-                  onClick={toggleRecording}
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 rounded-full ${isRecording ? 'text-red-500 hover:text-red-600 bg-red-100 hover:bg-red-200 animate-pulse' : 'text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-                >
-                  {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  size="icon"
-                  className="h-8 w-8 rounded-full bg-violet-600 hover:bg-violet-700 text-white shadow-sm disabled:opacity-30"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+        {/* Footer: only render when chat is NOT empty or is loading */}
+        {(messages.length > 1 || messages[0]?.content !== WELCOME_MSG.content || isLoading) && (
+          <div className="px-4 pb-6 pt-2 bg-background w-full">
+            <div className="w-full max-w-3xl mx-auto">
+              {renderInputForm()}
             </div>
-            <p className="text-[10px] text-muted-foreground text-center">Procurely can make mistakes. Check important info.</p>
-          </form>
-        </CardFooter>
+          </div>
+        )}
       </Card>
       </div>
     </div>

@@ -38,6 +38,8 @@ export async function seedDemoData(userId: string) {
   }
 
   // RFQs + Bids (created together so bids can reference real RFQ IDs)
+  // Wrapped in try/catch — role-gated collections may fail for Requestor users
+  try {
   if (await collectionEmpty('rfqs')) {
     const rfqData = [
       {
@@ -104,8 +106,10 @@ export async function seedDemoData(userId: string) {
       for (const b of bidData) batches.push(addDoc(collection(db, 'bids'), b).then(() => {}));
     }
   }
+  } catch (e) { console.warn('RFQ/Bid seed skipped (role-gated):', e); }
 
-  // Purchase Orders
+  // Purchase Orders — also role-gated, wrap in try/catch
+  try {
   if (await collectionEmpty('purchaseOrders')) {
     const pos = [
       { id: 'PO-001', supplierId: 'aws', vendorName: 'Amazon Web Services', items: [{ name: 'AWS Q3 Hosting', quantity: 1, unit_price: '$12,400' }], totalAmount: 12400, status: 'Issued', requisitionId: 'req-aws', createdBy: userId, createdAt: '2026-06-30T10:00:00Z', deliveryDate: '2026-07-01' },
@@ -114,6 +118,7 @@ export async function seedDemoData(userId: string) {
     ];
     for (const p of pos) batches.push(addDoc(collection(db, 'purchaseOrders'), p).then(() => {}));
   }
+  } catch (e) { console.warn('PO seed skipped (role-gated):', e); }
 
   // Knowledge Base
   if (await collectionEmpty('knowledgeBase')) {
