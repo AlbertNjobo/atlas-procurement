@@ -78,6 +78,31 @@ export const agentTools: ChatCompletionTool[] = [
   {
     type: "function",
     function: {
+      name: "search_online_suppliers",
+      description: "Search the web for potential suppliers matching a category and requirements. Returns real companies found online with their details. Use this when the user wants to find NEW suppliers not yet in the internal database.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: {
+            type: "string",
+            description: "Supplier category to search for (e.g., 'IT Software', 'Cloud Infrastructure', 'Hardware', 'Marketing Services')",
+          },
+          requirements: {
+            type: "string",
+            description: "Specific requirements or keywords (e.g., 'SOC2 compliant', 'enterprise support', 'API integration')",
+          },
+          budget_range: {
+            type: "string",
+            description: "Expected budget range (e.g., '$10K-$50K/year', 'under $5000')",
+          },
+        },
+        required: ["category"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
       name: "evaluate_supplier_risk",
       description: "Trigger a risk compliance assessment for a specific supplier by ID. Simulates invoking external risk APIs.",
       parameters: {

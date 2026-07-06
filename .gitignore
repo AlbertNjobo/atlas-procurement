@@ -108,3 +108,4 @@ lerna-debug.log*
 .agents/
 .mimocode/
 data/
+archify/

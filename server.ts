@@ -693,6 +693,26 @@ IMPORTANT: NEVER combine Qualifying, Recommending, and Intake Form phases. You M
             if (args.category) filtered = filtered.filter((s: any) => (s.category || '').toLowerCase().includes(args.category.toLowerCase()));
             if (args.risk_level) filtered = filtered.filter((s: any) => (s.risk || '').toLowerCase() === args.risk_level.toLowerCase());
             result = JSON.stringify(filtered.length > 0 ? filtered : [{ message: "No suppliers found matching criteria." }]);
+          } else if (tc.name === 'search_online_suppliers') {
+            try {
+              const searchQuery = `Find real companies that provide ${args.category} services${args.requirements ? ` with ${args.requirements}` : ''}${args.budget_range ? ` in the ${args.budget_range} range` : ''}. For each company, provide: company name, what they do (1 sentence), website URL if available, estimated pricing tier (Enterprise/Mid-Market/SMB), and key strengths. Return a JSON array with objects: { "name", "description", "website", "pricing_tier", "strengths" }. Return ONLY valid JSON.`;
+              const searchResponse = await openai!.chat.completions.create({
+                model: "qwen3.5-plus",
+                messages: [{ role: "user", content: searchQuery }],
+                temperature: 0.2,
+                extra_body: { enable_search: true, search_options: { search_strategy: "agent" } }
+              } as any);
+              const content = searchResponse.choices[0]?.message?.content || '[]';
+              const suppliers = JSON.parse(content.replace(/```json/g, '').replace(/```/g, '').trim());
+              result = JSON.stringify({
+                query: { category: args.category, requirements: args.requirements, budget_range: args.budget_range },
+                suppliers: Array.isArray(suppliers) ? suppliers : [],
+                message: `Found ${Array.isArray(suppliers) ? suppliers.length : 0} potential suppliers online for ${args.category}.`
+              });
+            } catch (e) {
+              console.error("Online supplier search error:", e);
+              result = JSON.stringify({ suppliers: [], message: "Unable to search online suppliers at this time." });
+            }
           } else if (tc.name === 'evaluate_supplier_risk') {
             // Use Qwen with web search for real supplier risk assessment
             try {
