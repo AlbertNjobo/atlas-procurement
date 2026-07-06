@@ -168,7 +168,7 @@ export function KnowledgeBase() {
 
       const docRef = await addDoc(collection(db, 'knowledgeBase'), newDoc);
 
-      // Generate embeddings for RAG pipeline
+      // Generate embeddings and store in Zvec
       try {
         toast.info('Generating embeddings for semantic search...');
         const embedResponse = await fetch('/api/kb/embed', {
@@ -183,14 +183,7 @@ export function KnowledgeBase() {
         });
         if (embedResponse.ok) {
           const embedData = await embedResponse.json();
-          if (embedData.chunks && embedData.chunks.length > 0) {
-            // Store embedded chunks back to the document
-            const { doc, updateDoc } = await import('firebase/firestore');
-            await updateDoc(doc(db, 'knowledgeBase', docRef.id), { 
-              chunks: embedData.chunks 
-            });
-            toast.success(`Document uploaded with ${embedData.count} searchable chunks`);
-          }
+          toast.success(`Document uploaded with ${embedData.count} searchable chunks`);
         }
       } catch (embedErr) {
         console.error('Embedding failed (document still saved):', embedErr);
@@ -229,7 +222,7 @@ export function KnowledgeBase() {
 
       const docRef = await addDoc(collection(db, 'knowledgeBase'), newDoc);
 
-      // Generate embeddings for RAG pipeline
+      // Generate embeddings and store in Zvec
       try {
         const embedResponse = await fetch('/api/kb/embed', {
           method: 'POST',
@@ -241,15 +234,6 @@ export function KnowledgeBase() {
             category: instructionCategory
           })
         });
-        if (embedResponse.ok) {
-          const embedData = await embedResponse.json();
-          if (embedData.chunks && embedData.chunks.length > 0) {
-            const { doc, updateDoc } = await import('firebase/firestore');
-            await updateDoc(doc(db, 'knowledgeBase', docRef.id), { 
-              chunks: embedData.chunks 
-            });
-          }
-        }
       } catch (embedErr) {
         console.error('Embedding failed for instruction:', embedErr);
       }

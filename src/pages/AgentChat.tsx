@@ -964,10 +964,7 @@ export function AgentChat() {
             workflowNodes,
             workflowEdges,
             userId: user?.uid,
-            knowledgeBase: useContext ? knowledgeBase : undefined,
-            kbChunks: useContext ? knowledgeBase.flatMap((doc: any) =>
-              (doc.chunks || []).map((c: any) => ({ ...c, docId: doc.id, title: doc.title }))
-            ) : undefined
+            knowledgeBase: useContext ? knowledgeBase : undefined
           }
         })
       });

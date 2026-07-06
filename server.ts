@@ -4,7 +4,8 @@ import { createServer as createViteServer } from "vite";
 import OpenAI from "openai";
 import "dotenv/config";
 import { agentTools } from "./src/lib/agent-tools";
-import { chunkText, chunkTextSmart, generateEmbeddings, generateQueryEmbedding, searchChunks, rerankResults } from "./src/lib/rag";
+import { chunkText, chunkTextSmart, generateEmbeddings, generateQueryEmbedding, rerankResults } from "./src/lib/rag";
+import { initZvecStore, insertChunks, searchChunks as zvecSearch, insertMemory, searchMemories } from "./src/lib/zvec-store";
 
 const app = express();
 const PORT = 3000;
@@ -37,6 +38,9 @@ try {
   console.warn("Could not initialize Qwen API", error);
 }
 
+// Initialize Zvec vector store
+initZvecStore();
+
 // API Routes
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
@@ -47,7 +51,7 @@ app.get("/api/health", (req, res) => {
 // Cross-session memory for the procurement agent
 // ============================================================================
 
-// Store a memory entry
+// Store a memory entry (in Zvec for vector search)
 app.post("/api/memory/store", async (req, res) => {
   try {
     const { userId, type, content, metadata } = req.body;
@@ -64,7 +68,20 @@ app.post("/api/memory/store", async (req, res) => {
       console.warn("Failed to embed memory, storing without embedding:", e);
     }
 
+    const memoryId = `mem_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+    // Store in Zvec for vector search
+    insertMemory({
+      id: memoryId,
+      userId,
+      type: type || "general",
+      content,
+      metadata: metadata || {},
+      embedding,
+    });
+
     const memoryEntry = {
+      id: memoryId,
       userId,
       type: type || "general",
       content,
@@ -80,38 +97,25 @@ app.post("/api/memory/store", async (req, res) => {
   }
 });
 
-// Search memories by semantic similarity
+// Search memories by semantic similarity (via Zvec)
 app.post("/api/memory/search", async (req, res) => {
   try {
-    const { userId, query, memories, topK } = req.body;
+    const { userId, query, topK, memoryType } = req.body;
     if (!userId || !query) {
       return res.status(400).json({ error: "userId and query are required" });
-    }
-
-    if (!memories || memories.length === 0) {
-      return res.json({ results: [] });
     }
 
     // Embed the query
     const queryEmbedding = await generateQueryEmbedding(query);
 
-    // Calculate cosine similarity against stored memories
-    const scored = memories
-      .filter((m: any) => m.embedding && m.embedding.length > 0)
-      .map((m: any) => ({
-        ...m,
-        score: cosineSimilarityLocal(queryEmbedding, m.embedding),
-      }))
-      .sort((a: any, b: any) => b.score - a.score)
-      .slice(0, topK || 5);
+    // Search Zvec index
+    const results = searchMemories(userId, queryEmbedding, topK || 5, memoryType);
 
-    res.json({ results: scored.map((m: any) => ({
-      id: m.id,
+    res.json({ results: results.map((m: any) => ({
       type: m.type,
       content: m.content,
       metadata: m.metadata,
       score: m.score,
-      createdAt: m.createdAt,
     }))});
   } catch (error: any) {
     console.error("Memory search error:", error);
@@ -170,18 +174,7 @@ Return ONLY a JSON array, no other text. Example:
   }
 });
 
-// Local cosine similarity (same as in rag.ts but self-contained for memory)
-function cosineSimilarityLocal(a: number[], b: number[]): number {
-  let dotProduct = 0, normA = 0, normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-}
-
-// RAG: Embed document chunks and store in request body (caller saves to Firestore)
+// RAG: Embed document chunks and store in Zvec
 app.post("/api/kb/embed", async (req, res) => {
   const { docId, title, content, category } = req.body;
   if (!content) return res.status(400).json({ error: "Content is required" });
@@ -189,33 +182,33 @@ app.post("/api/kb/embed", async (req, res) => {
   try {
     const isPolicy = (category || '').toLowerCase() === 'policy';
     const chunks = chunkTextSmart(content, isPolicy);
-    if (chunks.length === 0) return res.json({ chunks: [], embeddings: [] });
+    if (chunks.length === 0) return res.json({ chunks: [], count: 0 });
 
     const embeddings = await generateEmbeddings(chunks);
 
-    const chunkData = chunks.map((text, i) => ({
+    // Store chunks + embeddings in Zvec
+    insertChunks(chunks.map((text, i) => ({
       docId,
       title,
       text,
       embedding: embeddings[i],
-    }));
+    })));
 
-    res.json({ chunks: chunkData, count: chunks.length });
+    res.json({ count: chunks.length });
   } catch (error: any) {
     console.error("Embedding error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// RAG: Semantic search across embedded knowledge base chunks
+// RAG: Semantic search across embedded knowledge base chunks (via Zvec)
 app.post("/api/kb/search", async (req, res) => {
-  const { query, chunks, topK } = req.body;
+  const { query, topK } = req.body;
   if (!query) return res.status(400).json({ error: "Query is required" });
-  if (!chunks || chunks.length === 0) return res.json({ results: [] });
 
   try {
     const queryEmbedding = await generateQueryEmbedding(query);
-    let results = searchChunks(queryEmbedding, chunks, topK || 8);
+    let results = zvecSearch(queryEmbedding, topK || 8);
 
     // Rerank with qwen3-rerank for better precision
     if (results.length > 1) {
@@ -412,32 +405,28 @@ app.post("/api/agent/chat", async (req, res) => {
         });
       }
 
-      // Use direct RAG search for reference docs (no self-referential HTTP call)
-      if (context.kbChunks && context.kbChunks.length > 0) {
-        // Filter chunks to exclude policy docs (they're already injected above)
-        const policyDocIds = new Set(policyDocs.map((d: any) => d.id));
-        const referenceChunks = context.kbChunks.filter((c: any) => !policyDocIds.has(c.docId));
-
-        if (referenceChunks.length > 0) {
-          try {
-            const lastUserMessage = formattedMessages.filter((m: any) => m.role === 'user').pop();
-            const queryText = lastUserMessage?.content || "";
-            if (queryText) {
-              const queryEmbedding = await generateQueryEmbedding(queryText);
-              let results = searchChunks(queryEmbedding, referenceChunks, 5, 0.3);
-              if (results.length > 1) {
-                results = await rerankResults(queryText, results, 5);
-              }
-              if (results.length > 0) {
-                kbText = "\n\n=== RELEVANT KNOWLEDGE BASE (RAG) ===\nThe following information is semantically relevant to the user's query:\n";
-                results.forEach((r: any) => {
-                  kbText += `\n[${r.title}] (relevance: ${(r.score * 100).toFixed(0)}%):\n${r.text}\n---\n`;
-                });
-              }
+      // Use Zvec vector search for reference docs
+      if (referenceDocs.length > 0) {
+        try {
+          const lastUserMessage = formattedMessages.filter((m: any) => m.role === 'user').pop();
+          const queryText = lastUserMessage?.content || "";
+          if (queryText) {
+            const queryEmbedding = await generateQueryEmbedding(queryText);
+            // Exclude policy docs from vector search (they're already injected above)
+            const policyDocIds = new Set(policyDocs.map((d: any) => d.id));
+            let results = zvecSearch(queryEmbedding, 5, 0.3, [...policyDocIds] as string[]);
+            if (results.length > 1) {
+              results = await rerankResults(queryText, results, 5);
             }
-          } catch (e) {
-            console.error("RAG search failed:", e);
+            if (results.length > 0) {
+              kbText = "\n\n=== RELEVANT KNOWLEDGE BASE (RAG) ===\nThe following information is semantically relevant to the user's query:\n";
+              results.forEach((r: any) => {
+                kbText += `\n[${r.title}] (relevance: ${(r.score * 100).toFixed(0)}%):\n${r.text}\n---\n`;
+              });
+            }
           }
+        } catch (e) {
+          console.error("RAG search failed:", e);
         }
       } else if (referenceDocs.length > 0) {
         // Fallback: truncated raw content for reference docs only
@@ -942,7 +931,18 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
             } catch (e) {
               console.warn("Failed to embed memory content:", e);
             }
+            const memoryId = `mem_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+            // Store in Zvec for vector search
+            insertMemory({
+              id: memoryId,
+              userId: context?.userId || 'anonymous',
+              type: args.memory_type,
+              content: args.content,
+              metadata: args.metadata || {},
+              embedding,
+            });
             const newMemory = {
+              id: memoryId,
               userId: context?.userId || 'anonymous',
               type: args.memory_type,
               content: args.content,
