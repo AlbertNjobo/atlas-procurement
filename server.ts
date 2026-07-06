@@ -839,7 +839,7 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
               
               if (qwenResponse.ok) {
                 const data = await qwenResponse.json();
-                let foundImages = [];
+                let foundImages: any[] = [];
                 if (data.output && Array.isArray(data.output)) {
                   for (const item of data.output) {
                     if (item.type === "web_search_image_call" && item.output) {
@@ -848,7 +848,11 @@ Respond in valid JSON with keys: comparison (array), winning_supplier, reasoning
                     }
                   }
                 }
-                
+
+                // Filter: only keep renderable image formats (reject PSD, AI, EPS, etc.)
+                const RENDERABLE_EXT = /\.(jpe?g|png|webp|gif)$/i;
+                foundImages = foundImages.filter((img: any) => img.url && RENDERABLE_EXT.test(img.url));
+
                 // Return up to 4 images to keep the UI clean
                 result = JSON.stringify({
                   images: foundImages.slice(0, 4).map((img: any) => ({

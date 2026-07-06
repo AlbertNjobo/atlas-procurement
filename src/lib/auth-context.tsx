@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, browserPopupRedirectResolver } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, signInWithEmailAndPassword, GoogleAuthProvider, signOut, browserPopupRedirectResolver } from 'firebase/auth';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import { UserRole, UserProfile } from '../types';
@@ -9,6 +9,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   login: () => Promise<void>;
+  demoLogin: () => Promise<void>;
   logout: () => Promise<void>;
   updateRole: (role: UserRole) => Promise<void>;
 }
@@ -65,6 +66,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const demoLogin = async () => {
+    try {
+      await signInWithEmailAndPassword(auth, 'demo@atlas.procurement', 'DemoAtlas2026!');
+    } catch (error: any) {
+      console.error('Demo login error:', error);
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
   };
@@ -75,7 +84,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, logout, updateRole }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, demoLogin, logout, updateRole }}>
       {children}
     </AuthContext.Provider>
   );

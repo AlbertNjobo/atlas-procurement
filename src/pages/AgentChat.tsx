@@ -13,6 +13,9 @@ import { collection, query, where, getDocs, orderBy, limit, doc, getDoc, setDoc,
 import { db } from '../lib/firebase';
 import { BidMatrixCard } from '../components/agent/BidMatrixCard';
 import { SupplierFormCard } from '../components/agent/SupplierFormCard';
+
+const isRenderableImage = (url: string) => /\.(jpe?g|png|webp|gif)$/i.test(url);
+const PLACEHOLDER_IMG = 'https://placehold.co/400x300/f3f4f6/6b7280?text=Product';
 import { ProcessTimelineCard } from '../components/agent/ProcessTimelineCard';
 import { ItemDetailsCard } from '../components/agent/ItemDetailsCard';
 import { UploadPromptCard } from '../components/agent/UploadPromptCard';
@@ -154,7 +157,7 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
               onClick={() => toggleSelect(item)}
             >
               <div className="h-32 bg-muted relative overflow-hidden">
-                <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <img src={isRenderableImage(item.image_url) ? item.image_url : PLACEHOLDER_IMG} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
                 {isSelected && (
                   <div className="absolute top-2 right-2 bg-purple-600 text-white p-1 rounded-full shadow-md z-10">
                     <CheckCircle className="h-4 w-4" />
@@ -215,7 +218,7 @@ function SuggestedItemsGrid({ items, onSelect }: { items: any[], onSelect: (text
                     {selectedItems.map((item, idx) => (
                       <th key={idx} className="p-3 text-left font-medium w-1/3 border-l border-purple-100 dark:border-purple-900/50">
                         <div className="flex items-center gap-2">
-                          <img src={item.image_url} className="w-8 h-8 rounded object-cover" />
+                          <img src={isRenderableImage(item.image_url) ? item.image_url : `https://placehold.co/32x32/f3f4f6/6b7280?text=${encodeURIComponent(item.name.charAt(0))}`} className="w-8 h-8 rounded object-cover" onError={(e) => { (e.target as HTMLImageElement).src = `https://placehold.co/32x32/f3f4f6/6b7280?text=${encodeURIComponent(item.name.charAt(0))}`; }} />
                           <span className="line-clamp-1">{item.name}</span>
                         </div>
                       </th>
@@ -533,18 +536,19 @@ function ExpandableBotMessage({ msg, renderCard, isStreaming, onSelect }: { msg:
                   if (tool.name === 'search_product_images' && tool.result) {
                     try {
                       const data = JSON.parse(tool.result);
-                      if (data.images && data.images.length > 0) {
+                      const renderableImages = (data.images || []).filter((img: any) => isRenderableImage(img.url));
+                      if (renderableImages.length > 0) {
                         return (
                           <div key={idx} className="mb-4 mt-2">
                             <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                              <Activity className="h-4 w-4 text-purple-600" /> 
+                              <Activity className="h-4 w-4 text-purple-600" />
                               Suggested Options
                             </h4>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              {data.images.map((img: any, iIdx: number) => (
+                              {renderableImages.map((img: any, iIdx: number) => (
                                 <div key={iIdx} className="bg-white dark:bg-card border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-purple-300 transition-all cursor-pointer flex flex-col group" onClick={() => onSelect(`I want to select ${img.title}`)}>
                                   <div className="h-32 bg-muted relative overflow-hidden">
-                                    <img src={img.url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                    <img src={img.url} alt={img.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" onError={(e) => { (e.target as HTMLImageElement).src = PLACEHOLDER_IMG; }} />
                                   </div>
                                   <div className="p-3 flex flex-col flex-1">
                                     <h5 className="font-semibold text-sm line-clamp-2 mb-3">{img.title}</h5>
