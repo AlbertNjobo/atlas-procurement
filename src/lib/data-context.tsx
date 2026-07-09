@@ -6,7 +6,7 @@ import { PurchaseRequisition, RFQ, Bid, GoodsReceipt, Invoice } from '../types';
 import { seedDemoData } from './seed-demo';
 
 export type IntakeRequest = { id: string; title: string; department: string; status: string; amount: string; date: string; supplier: string; description: string; userId: string; };
-export type Supplier = { id: string; name: string; category: string; risk: string; status: string; compliance: boolean; userId: string; };
+export type Supplier = { id: string; name: string; category: string; email?: string; contact_email?: string; contact_name?: string; risk: string; status: string; compliance: boolean; userId: string; };
 export type SpendMetric = { id: string; month: string; spend: number; userId: string; };
 export type DepartmentSpendMetric = { id: string; department: string; q1: number; q2: number; q3: number; q4: number; userId: string; };
 
@@ -42,10 +42,10 @@ const initialIntakes = [
 ];
 
 const initialSuppliers = [
-  { id: 'SUP-001', name: 'Amazon Web Services', category: 'IT Software', risk: 'Low', status: 'Active', compliance: true },
-  { id: 'SUP-002', name: 'Stripe Inc.', category: 'Financial Services', risk: 'Low', status: 'Active', compliance: true },
-  { id: 'SUP-003', name: 'Acme Corp', category: 'Hardware', risk: 'Medium', status: 'Onboarding', compliance: false },
-  { id: 'SUP-004', name: 'Global Logistics LLC', category: 'Logistics', risk: 'High', status: 'Under Review', compliance: false },
+  { id: 'SUP-001', name: 'Amazon Web Services', category: 'IT Software', risk: 'Low', status: 'Active', compliance: true, contact_email: 'lawrencenjobo9@gmail.com', contact_name: 'Lawrence Njobo' },
+  { id: 'SUP-002', name: 'Stripe Inc.', category: 'Financial Services', risk: 'Low', status: 'Active', compliance: true, contact_email: 'lawrencenjobo8@gmail.com', contact_name: 'Lawrence Njobo' },
+  { id: 'SUP-003', name: 'Acme Corp', category: 'Hardware', risk: 'Medium', status: 'Onboarding', compliance: false, contact_email: 'theayloe@gmail.com', contact_name: 'Thea Yloe' },
+  { id: 'SUP-004', name: 'Global Logistics LLC', category: 'Logistics', risk: 'High', status: 'Under Review', compliance: false, contact_email: 'n02212525l@students.nust.ac.zw', contact_name: 'NUST Student' },
 ];
 
 const initialProcurementCatalogItems = [

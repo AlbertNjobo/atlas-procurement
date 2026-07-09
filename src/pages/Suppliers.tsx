@@ -66,6 +66,8 @@ export function Suppliers() {
     updateSupplier(newId, {
       name: newSupplier.name,
       category: newSupplier.category,
+      email: newSupplier.email,
+      contact_email: newSupplier.email,
       risk: newSupplier.risk,
       status: 'Onboarding',
       compliance: false

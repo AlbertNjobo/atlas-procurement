@@ -259,15 +259,40 @@ export async function executeWorkflow(
           currentNodeId = getNextNode(edges, currentNodeId);
           break;
 
-        case 'notifyVendor':
+        case 'notifyVendor': {
+          // Send email via server endpoint
+          let emailSent = false;
+          let emailError = '';
+          try {
+            const res = await fetch('/api/email/send', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'po_notification',
+                to: [currentData.vendorEmail || 'vendor@example.com'],
+                data: {
+                  poNumber: `PO-${Date.now()}`,
+                  amount: currentData.amount || 0,
+                  items: currentData.items || 'Procurement items',
+                },
+              }),
+            });
+            const result = await res.json();
+            emailSent = result.success;
+            emailError = result.error || '';
+          } catch (e) {
+            emailError = (e as Error).message;
+          }
           step.result = {
-            sent: true,
+            sent: emailSent,
             method: node.data?.method || 'Email',
             vendor: currentData.vendor,
+            error: emailError || undefined,
             timestamp: new Date().toISOString(),
           };
           currentNodeId = getNextNode(edges, currentNodeId);
           break;
+        }
 
         case 'action':
           step.result = {

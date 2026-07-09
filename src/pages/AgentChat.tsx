@@ -1412,6 +1412,7 @@ export function AgentChat() {
                     const newSupplier = {
                       name: pending.name,
                       category: pending.category,
+                      contact_email: pending.contact_email || '',
                       risk: pending.risk_level,
                       status: 'Onboarding',
                       compliance: false,
