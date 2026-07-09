@@ -3,46 +3,43 @@
   "diagram_type": "architecture",
   "meta": {
     "title": "Procurely — AI Procurement Agent",
-    "subtitle": "Qwen Cloud-powered procurement automation with 25 tools, RAG, multi-agent delegation, and speech-to-text",
+    "subtitle": "Qwen Cloud-powered procurement automation with workflow designer, email integration, and 30+ tools",
     "output": "procurely-architecture.html"
   },
   "components": [
-    { "id": "browser", "type": "frontend", "label": "Browser", "sublabel": "React + Vite + Tailwind", "pos": [40, 220], "size": [130, 60] },
-    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare", "sublabel": "DNS + SSL Proxy", "pos": [240, 220], "size": [130, 60] },
-    { "id": "nginx", "type": "backend", "label": "Nginx", "sublabel": "Reverse Proxy :80/:443", "pos": [440, 220], "size": [140, 60] },
-    { "id": "app", "type": "backend", "label": "Express Server", "sublabel": "server.ts :3000", "pos": [650, 220], "size": [140, 60] },
-    { "id": "zvec", "type": "database", "label": "Zvec", "sublabel": "HNSW Vector Index", "pos": [650, 60], "size": [140, 60], "tag": "kb_chunks + memories" },
-    { "id": "firebase", "type": "database", "label": "Firebase", "sublabel": "Firestore + Auth", "pos": [650, 390], "size": [140, 60] },
-    { "id": "embed", "type": "external", "label": "text-embedding-v4", "sublabel": "1024d Embeddings", "pos": [880, 30], "size": [165, 50] },
-    { "id": "rerank", "type": "external", "label": "qwen3-rerank", "sublabel": "Cross-Attention", "pos": [880, 95], "size": [165, 50] },
-    { "id": "chat", "type": "external", "label": "qwen3.5-plus (Agent)", "sublabel": "Chat, Web & Image Search", "pos": [880, 200], "size": [165, 60] },
-    { "id": "vision", "type": "external", "label": "qwen3.5-plus (OCR)", "sublabel": "Invoice Extraction", "pos": [880, 280], "size": [165, 50] },
-    { "id": "speech", "type": "external", "label": "qwen3.5-omni-flash", "sublabel": "Speech-to-Text", "pos": [880, 350], "size": [165, 50] },
-    { "id": "flash", "type": "external", "label": "qwen3.6-flash (Agents)", "sublabel": "Risk, Bid & Comp Specialists", "pos": [880, 420], "size": [165, 60] }
+    { "id": "browser", "type": "frontend", "label": "Browser", "sublabel": "React + Vite + Tailwind", "pos": [40, 250] },
+    { "id": "cloudflare", "type": "cloud", "label": "Cloudflare", "sublabel": "DNS + SSL Proxy", "pos": [220, 250] },
+    { "id": "nginx", "type": "backend", "label": "Nginx", "sublabel": "Reverse Proxy :80/:443", "pos": [400, 250] },
+    { "id": "express", "type": "backend", "label": "Express Server", "sublabel": "server.ts :3000", "pos": [580, 250] },
+    { "id": "zvec", "type": "database", "label": "Zvec", "sublabel": "HNSW Vector Index", "pos": [580, 60] },
+    { "id": "firebase", "type": "database", "label": "Firebase", "sublabel": "Firestore + Auth", "pos": [580, 420] },
+    { "id": "workflow", "type": "backend", "label": "Workflow Engine", "sublabel": "ReactFlow + Custom Nodes", "pos": [580, 155] },
+    { "id": "email", "type": "external", "label": "Resend", "sublabel": "Email API", "pos": [580, 340] },
+    { "id": "embedding", "type": "external", "label": "Embeddings", "sublabel": "text-embedding-v4 1024d", "pos": [820, 40] },
+    { "id": "rerank", "type": "external", "label": "Reranking", "sublabel": "qwen3-rerank", "pos": [820, 110] },
+    { "id": "agent", "type": "external", "label": "Agent LLM", "sublabel": "qwen3.7-plus", "pos": [820, 180] },
+    { "id": "ocr", "type": "external", "label": "OCR Model", "sublabel": "qwen3.5-plus", "pos": [820, 250] },
+    { "id": "speech", "type": "external", "label": "Speech Model", "sublabel": "qwen3.5-omni-flash", "pos": [820, 320] },
+    { "id": "specialists", "type": "external", "label": "Specialists", "sublabel": "qwen3.6-flash", "pos": [820, 390] },
+    { "id": "alt-llm", "type": "external", "label": "Alt Models", "sublabel": "glm-5.2 / deepseek / mimo", "pos": [820, 460] }
   ],
   "boundaries": [
-    { "kind": "region", "label": "Alibaba Cloud SAS — Docker Compose", "wraps": ["nginx", "app", "zvec"] },
-    { "kind": "region", "label": "Firebase Cloud Services", "wraps": ["firebase"] },
-    { "kind": "region", "label": "Qwen Cloud — RAG Services", "wraps": ["embed", "rerank"] },
-    { "kind": "region", "label": "Qwen Cloud — Core AI Services", "wraps": ["chat", "vision", "speech", "flash"] }
+    { "kind": "region", "label": "Alibaba Cloud (Qwen)", "wraps": ["embedding", "rerank", "agent", "ocr", "speech", "specialists", "alt-llm"] }
   ],
   "connections": [
     { "from": "browser", "to": "cloudflare", "label": "HTTPS", "variant": "emphasis" },
     { "from": "cloudflare", "to": "nginx", "label": "HTTP :80" },
-    { "from": "nginx", "to": "app", "label": "proxy :3000" },
-    { "from": "app", "to": "zvec", "label": "vector search", "variant": "emphasis", "fromSide": "top", "toSide": "bottom", "labelAt": [720, 140] },
-    { "from": "app", "to": "firebase", "label": "CRUD + Auth", "labelAt": [720, 345] },
-    { "from": "app", "to": "embed", "label": "embeddings", "labelAt": [835, 155] },
-    { "from": "app", "to": "rerank", "label": "reranking", "labelAt": [835, 185] },
-    { "from": "app", "to": "chat", "label": "chat + tools", "variant": "emphasis", "labelAt": [835, 240] },
-    { "from": "app", "to": "vision", "label": "OCR", "labelAt": [835, 280] },
-    { "from": "app", "to": "speech", "label": "transcribe", "labelAt": [835, 315] },
-    { "from": "app", "to": "flash", "label": "delegate tasks", "variant": "dashed", "labelAt": [835, 360] }
+    { "from": "nginx", "to": "express", "label": "proxy :3000" },
+    { "from": "express", "to": "zvec", "label": "vector search" },
+    { "from": "express", "to": "firebase", "label": "CRUD + Auth", "labelDy": 24 },
+    { "from": "express", "to": "workflow", "label": "execute", "labelAt": [640, 229] },
+    { "from": "express", "to": "email", "label": "send", "labelDy": 24 },
+    { "from": "express", "to": "embedding", "label": "embeddings", "variant": "dashed" },
+    { "from": "express", "to": "agent", "label": "chat", "variant": "emphasis" },
+    { "from": "workflow", "to": "email", "label": "notify", "variant": "dashed", "labelDy": 24 }
   ],
   "cards": [
-    { "dot": "cyan", "title": "Frontend (React 19 + Vite)", "items": ["Key pages: Agent Chat, Dashboard, Intake, RFQs, Requisitions, Request Tracker, Suppliers, Vendor Portal, Workflow Designer, Knowledge Base", "Streaming NDJSON response parsing and interactive widgets", "Web Audio API capturing and converting speech to base64"] },
-    { "dot": "emerald", "title": "Backend (server.ts + Express)", "items": ["Node.js Express backend executing 25 agent-accessible tools", "In-process vector search via Zvec using HNSW index and WAL persistence", "Multi-Agent delegation protocol dispatching subtasks dynamically", "Comprehensive JWT/Firebase authentication middleware"] },
-    { "dot": "violet", "title": "Qwen Cloud AI Integration", "items": ["qwen3.5-plus: Core chatbot reasoning and tool invocation", "text-embedding-v4 & qwen3-rerank: Vector lookup & high-accuracy reranking", "qwen3.5-omni-flash: Direct speech-to-text base64 audio decoding", "qwen3.6-flash: Autonomous sub-agents (Risk Analyst, Bid Optimizer, Compliance Checker)", "enable_search: Dynamic web crawling for market and vendor research"] },
-    { "dot": "rose", "title": "Infrastructure & Storage", "items": ["Alibaba Cloud SAS (2 vCPU, 2 GiB) orchestrating Docker container", "Cloudflare DNS & SSL providing proxy caching and HTTPS termination", "Nginx acting as reverse proxy forwarding SSE and REST endpoints", "Firebase Firestore (realtime DB) & Firebase Auth (identity management)"] }
+    { "dot": "cyan", "title": "Tech Stack", "items": ["React 19 + Vite + Tailwind", "Express.js + TypeScript", "Firebase Firestore + Auth", "Resend Email API", "Cloudflare DNS"] },
+    { "dot": "violet", "title": "AI Models (11)", "items": ["qwen3.7-plus (primary)", "qwen3.6-flash (specialists)", "qwen3.5-plus (OCR)", "text-embedding-v4", "glm-5.2, deepseek, mimo"] }
   ]
 }
