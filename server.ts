@@ -637,12 +637,13 @@ IMPORTANT: NEVER combine Qualifying, Recommending, and Intake Form phases. You M
         model: model || "qwen3.7-plus",
         messages: currentMessages,
         tools: agentTools as any,
+        max_tokens: 8192,
         stream: true,
         stream_options: { include_usage: true },
         extra_body: {
           enable_search: true,
           enable_thinking: true,
-          thinking_budget: 2048,
+          thinking_budget: 4096,
           preserve_thinking: true,
           search_options: {
             search_strategy: "agent"
