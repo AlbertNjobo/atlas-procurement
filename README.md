@@ -23,8 +23,8 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/track-Autopilot%20Agent-blue?style=for-the-badge" alt="Hackathon Track">
-  <img src="https://img.shields.io/badge/Qwen%20Cloud-11%20Models-orange?style=for-the-badge" alt="Qwen Models">
-  <img src="https://img.shields.io/badge/30%2B-Agent%20Tools-green?style=for-the-badge" alt="Agent Tools">
+  <img src="https://img.shields.io/badge/Qwen%20Cloud-8%2B%20Models-orange?style=for-the-badge" alt="Qwen Models">
+  <img src="https://img.shields.io/badge/29-Agent%20Tools-green?style=for-the-badge" alt="Agent Tools">
   <img src="https://img.shields.io/badge/license-MIT-purple?style=for-the-badge" alt="License">
 </p>
 
@@ -40,6 +40,7 @@ Procurely is a procurement AI agent that automates real-world business workflows
 - [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Qwen Cloud Integration](#qwen-cloud-integration)
+- [Alibaba Cloud Deployment](#alibaba-cloud-deployment)
 - [Demo Flow](#demo-flow)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
@@ -64,22 +65,29 @@ Procurely is a procurement AI agent that automates real-world business workflows
 ## Quick Start
 
 ```bash
-# Clone the repo
-git clone https://github.com/albertnjobo/procurely.git
-cd procurely
+# Clone the repo (GitHub name may still be atlas-procurement)
+git clone https://github.com/AlbertNjobo/atlas-procurement.git
+cd atlas-procurement
 
 # Install dependencies
 npm install
 
-# Set up environment
+# Environment
 cp .env.example .env
-# Add your QWEN_API_KEY and RESEND_API_KEY
+# Required: QWEN_API_KEY
+# Optional: RESEND_API_KEY, API_SECRET, GOOGLE_APPLICATION_CREDENTIALS
 
-# Start development server
+# Firebase web config ships in-repo for the demo.
+# For your own project:
+#   cp firebase-applet-config.example.json firebase-applet-config.json
+
+# Start development server (Express + Vite on one port)
 npm run dev
 ```
 
 The app runs at `http://localhost:3000`. Sign in with Firebase Auth. On first login, demo data is auto-seeded.
+
+Protected `/api/*` routes expect a Firebase ID token (`Authorization: Bearer …`) from the signed-in client. Health checks (`GET /api/health`) are public.
 
 ## Architecture
 
@@ -108,7 +116,7 @@ The app runs at `http://localhost:3000`. Sign in with Firebase Auth. On first lo
 │                                                          │
 │  ┌─────────────┐  ┌──────────────┐  ┌────────────────┐  │
 │  │ Agent Chat   │  │ RAG Pipeline │  │ Tool Execution │  │
-│  │ (streaming)  │  │ (Zvec +      │  │ (30+ tools)    │  │
+│  │ (streaming)  │  │ (Zvec +      │  │ (29 tools)     │  │
 │  │              │  │  rerank)     │  │                │  │
 │  └──────┬───────┘  └──────┬───────┘  └───────┬────────┘  │
 │         │                 │                   │           │
@@ -120,7 +128,7 @@ The app runs at `http://localhost:3000`. Sign in with Firebase Auth. On first lo
           │                 │                   │
     ┌─────▼─────┐    ┌─────▼─────┐      ┌──────▼──────┐
     │Qwen Cloud  │    │Firebase   │      │  Resend     │
-    │11 Models   │    │Auth +     │      │  Email API  │
+    │8+ Models   │    │Auth +     │      │  Email API  │
     │14+ API     │    │Firestore  │      │             │
     │calls       │    │           │      │             │
     └───────────┘    └───────────┘      └─────────────┘
@@ -130,16 +138,29 @@ The app runs at `http://localhost:3000`. Sign in with Firebase Auth. On first lo
 
 ## Qwen Cloud Integration
 
-Procurely uses **11 AI models** across **14+ API calls**:
+Procurely uses multiple Qwen Cloud models for specialized jobs:
 
 | Model | Purpose | API |
 |-------|---------|-----|
-| `qwen3.7-max` | Maximum performance tasks | Complex reasoning |
-| `qwen3.5-plus` | Chat, tool calling, web search, vision, negotiation | Chat completions, web search, vision OCR |
-| `qwen3.6-flash` | Specialist sub-agent tasks (risk, bid, compliance) | Delegated analysis |
+| `qwen3.7-plus` | Primary agent — reasoning + tool calling | Chat completions |
+| `qwen3.6-flash` | Specialist sub-agents (risk, bid, compliance) | Delegated analysis |
+| `qwen3.5-plus` | Background / vision-related flows | Chat + vision |
 | `text-embedding-v4` | Document and query vectorization (1024d) | Embeddings API |
 | `qwen3-rerank` | Cross-attention reranking for RAG precision | Reranking API |
 | `qwen3.5-omni-flash` | Speech-to-text transcription | Audio input |
+
+The UI model picker also exposes additional Qwen Cloud catalog models (e.g. DeepSeek, GLM, MiMo) for experimentation.
+
+## Alibaba Cloud Deployment
+
+Backend AI runs on **Qwen Cloud (DashScope)** and the app is hosted on **Alibaba Cloud** via Docker Compose.
+
+See **[docs/alibaba-cloud.md](docs/alibaba-cloud.md)** for hackathon proof of Alibaba Cloud usage (API endpoints, models, compose/Dockerfile references, and deploy commands).
+
+```bash
+docker compose up -d --build
+curl -f http://localhost:3000/api/health
+```
 
 ## Demo Flow
 
@@ -183,16 +204,21 @@ src/
 │   └── agent/              # Agent-specific cards
 ├── emails/                 # React Email templates
 ├── lib/                    # Core logic
-│   ├── agent-tools.ts      # 30+ tool definitions
+│   ├── agent-tools.ts      # 29 tool definitions
 │   ├── tool-executor.ts    # Tool execution engine
+│   ├── auth-middleware.ts  # Bearer auth + rate limiting
+│   ├── api.ts              # Authenticated client fetch helper
 │   ├── rag.ts              # RAG pipeline
 │   ├── zvec-store.ts       # Vector search
 │   └── workflow-engine.ts  # Workflow execution
 ├── routes/                 # Express API routes
-│   ├── agent.ts            # Agent chat endpoint
+│   ├── agent.ts            # Agent chat / transcribe / responses
 │   ├── kb.ts               # Knowledge base endpoints
+│   ├── email.ts            # Resend email
+│   ├── workflows.ts        # Workflow runner
 │   └── memory.ts           # Memory endpoints
 server.ts                   # Express server entry
+docs/alibaba-cloud.md       # Alibaba Cloud deployment proof
 ```
 
 ## Environment Variables
@@ -202,8 +228,18 @@ QWEN_API_KEY=sk-your-qwen-api-key
 RESEND_API_KEY=re_your-resend-api-key
 RESEND_FROM_EMAIL=Procurely <notifications@procurely.dpdns.org>
 APP_URL=http://localhost:3000
+PORT=3000
+
+# Recommended for public deploys
+API_SECRET=long-random-string
+# GOOGLE_APPLICATION_CREDENTIALS=/path/to/firebase-adminsdk.json
+# RATE_LIMIT_MAX=60
 ```
+
+Full list: [`.env.example`](.env.example).
 
 ## License
 
-MIT © [Lawrence Njobo](https://github.com/albertnjobo)
+MIT © [Lawrence Njobo](https://github.com/AlbertNjobo)
+
+**Repo note:** Product name is **Procurely**; GitHub repository may still be named `atlas-procurement`.

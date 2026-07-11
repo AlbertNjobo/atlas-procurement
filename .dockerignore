@@ -10,3 +10,18 @@ build
 .vscode
 .idea
 data
+
+# Never bake secrets or local junk into the image
+service-account.json
+service-account*.json
+*-firebase-adminsdk-*.json
+test-firestore*
+test_asr.js
+patch_*.cjs
+archify
+.agents
+.claude
+.kimchi
+.mimocode
+assets
+docs/compose

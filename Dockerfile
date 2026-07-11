@@ -2,21 +2,27 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
+# curl is used by docker-compose healthchecks
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends curl \
+  && rm -rf /var/lib/apt/lists/*
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Install dependencies (npm lockfile — matches local development)
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile 2>/dev/null || pnpm install
-
-# Copy source code
+# Copy application source
 COPY . .
 
-# Build the app
-RUN pnpm build
+# Build frontend (Vite) + bundle server (esbuild)
+RUN npm run build
+
+ENV NODE_ENV=production
+ENV PORT=3000
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3000/api/health || exit 1
 
 CMD ["node", "dist/server.cjs"]

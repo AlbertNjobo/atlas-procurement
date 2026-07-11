@@ -1,7 +1,8 @@
 {
-  "name": "atlas-procurement",
+  "name": "procurely",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Procurely — AI procurement autopilot agent (Qwen Cloud Autopilot Agent track)",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",

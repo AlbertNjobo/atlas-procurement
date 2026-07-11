@@ -36,7 +36,10 @@ out/
 .firebase/
 firebase-debug.log
 ui-debug.log
-firebase-applet-config.json
+# Note: firebase-applet-config.json is committed (public web client keys only).
+# Never commit service-account JSON or GOOGLE_APPLICATION_CREDENTIALS files.
+*-firebase-adminsdk-*.json
+service-account*.json
 
 # ==============================================================================
 # TypeScript

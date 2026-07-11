@@ -379,7 +379,6 @@ export function registerAgentRoutes(app: Router, getOpenAI: () => OpenAI | null)
           for (const tc of toolCalls) {
             const args = tc.arguments ? JSON.parse(tc.arguments) : {};
             res.write(JSON.stringify({ type: "tool_start", name: tc.name, arguments: args }) + "\n");
-            await new Promise(r => setTimeout(r, 1200));
             const result = await executeToolCall(tc, context, openai);
             toolCallsMade.push({ name: tc.name, arguments: args, result });
             res.write(JSON.stringify({ type: "tool_result", name: tc.name, result }) + "\n");
